@@ -1,0 +1,1 @@
+enum ServiceType { inPerson, online }

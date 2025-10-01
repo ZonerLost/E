@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "355522851985",
+    "project_id": "xplore-app-ebaac",
+    "storage_bucket": "xplore-app-ebaac.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:355522851985:android:0d0adf2480de133a7f7b30",
+        "android_client_info": {
+          "package_name": "com.example.edwardb"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDRBz5tDCx1W7l_okgE7uznzitiUOX4bek"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
