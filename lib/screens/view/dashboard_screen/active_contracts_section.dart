@@ -209,12 +209,12 @@ class ActiveContractsSection extends StatelessWidget {
           Expanded(
             flex: 1,
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
               decoration: BoxDecoration(
                 color: status.toLowerCase() == 'active'
                     ? const Color(0xFF10B981) // Green for active
                     : const Color(0xFFDC2626), // Red for other statuses
-                borderRadius: BorderRadius.circular(16.r),
+                borderRadius: BorderRadius.circular(10.r),
               ),
               child: Center(
                 child: EdwardbText(

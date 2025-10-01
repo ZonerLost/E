@@ -2,12 +2,11 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
-import 'package:edwardb/config/routes/routes_names.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_confirm_screen.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_selected_screen.dart';
 import 'package:edwardb/services/firebase_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -250,4 +249,9 @@ class InspectionController extends GetxController {
     username = name;
     image = imageURL;
   }
+
+
+
+
+
 }

@@ -3,7 +3,6 @@ import 'dart:developer';
 import 'package:edwardb/config/routes/routes_names.dart';
 import 'package:edwardb/controllers/auth_controller/auth_repository.dart';
 import 'package:edwardb/services/firebase_service.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -36,4 +35,7 @@ class AuthController extends GetxController implements AuthRepository {
       controllerIsBusy.value = false;
     }
   }
+
+
+
 }

@@ -1,10 +1,15 @@
 import 'dart:developer';
+import 'package:edwardb/config/routes/routes_names.dart';
 import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/firebase_service.dart';
 import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
   RxBool controllerIsBusy = false.obs;
+    var totalContracts = 0.obs;
+  var monthlyContracts = 0.obs;
+  var activeContracts = 0.obs;
+
 
   ///
   /// ===== PROFILE ======
@@ -21,17 +26,16 @@ class ProfileController extends GetxController {
   void onInit() {
     super.onInit();
     getProfile();
+    fetchContracts();
   }
 
   Future<void> getProfile() async {
-    if (controllerIsBusy.value) return;
+
 
     try {
       controllerIsBusy.value = true;
 
-      // Get profile from FirebaseService
       final profileData = await FirebaseService.instance.getProfile();
-
       profile.value = profileData;
 
       log('Profile loaded successfully: ${profile.value.username}');
@@ -48,8 +52,40 @@ class ProfileController extends GetxController {
     }
   }
 
+  Future<void> fetchContracts() async {
+    try {
+      controllerIsBusy.value = true;
+
+      final contractsData = await FirebaseService.instance.getUserContracts();
+       
+      totalContracts.value = contractsData['totalContracts'];
+      monthlyContracts.value = contractsData['monthlyContracts'];
+      activeContracts.value = contractsData['activeContracts'];
+      // contractsList.assignAll(contractsData['contractsList']);
+
+    } catch (e) {
+      log("Error fetching contracts: $e");
+    } finally {
+      controllerIsBusy.value = false;
+    }
+  }
+
+
+
+  
   // Method to refresh profile data
   Future<void> refreshProfile() async {
     await getProfile();
   }
+
+Future<void> logOut()async{
+
+  await FirebaseService.instance.userLogout();
+  Get.offAllNamed(RouteName.loginScreen);
+
+
+
+}
+
+
 }

@@ -4,8 +4,10 @@ import 'dart:developer' as log;
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:edwardb/model/contract_model.dart';
 import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/share_pref_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class FirebaseService {
@@ -16,63 +18,73 @@ class FirebaseService {
 
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
   FirebaseStorage get _storage => FirebaseStorage.instance;
+  FirebaseAuth get _auth => FirebaseAuth.instance;
 
-  Future<void> signIn(String email, String password, bool remember) async {
+   Future<void> signIn(String email, String password, bool remember) async {
     try {
-      final querySnapshot = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
+      final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
 
-      if (querySnapshot.docs.isEmpty) {
-        throw Exception('No user found for that email.');
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception("No user found");
       }
 
-      final userDoc = querySnapshot.docs.first;
-      final userData = userDoc.data();
-
-      if (userData['password'] != password) {
-        throw Exception('Wrong password provided for that user.');
+      final userDoc = await _firestore.collection('users').doc(user.uid).get();
+      if (!userDoc.exists) {
+        throw Exception("User profile not found in Firestore");
       }
 
       // Save user ID locally if remember me is checked
       if (remember) {
-        await SharePrefService.instance.addUserId(userDoc.id);
+        await SharePrefService.instance.addUserId(user.uid);
       } else {
-        // Clear saved user ID if remember me is not checked
         await SharePrefService.instance.clearUserId();
+      }
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        throw Exception('No user found for that email.');
+      } else if (e.code == 'wrong-password') {
+        throw Exception('Wrong password provided.');
+      } else {
+        throw Exception('Auth error: ${e.message}');
       }
     } catch (e) {
       throw Exception('Failed to sign in: $e');
     }
   }
 
-  Future<ProfileModel> getProfile() async {
+
+  Future<void> userLogout() async {
     try {
-      // Get user ID from SharedPreferences
-      final userId = await SharePrefService.instance.getUserId();
-
-      if (userId == null || userId.isEmpty) {
-        throw Exception('No user ID found. Please login again.');
-      }
-
-      // Get user data from Firestore
-      final DocumentSnapshot userDoc = await _firestore
-          .collection('users')
-          .doc(userId)
-          .get();
-
-      if (!userDoc.exists) {
-        throw Exception('User not found. Please login again.');
-      }
-
-      final userData = userDoc.data() as Map<String, dynamic>;
-
-      return ProfileModel.fromJson(userData, userId);
+      await _auth.signOut();
+      await SharePrefService.instance.clearUserId();
     } catch (e) {
-      throw Exception('Failed to get profile: $e');
+      throw Exception("Logout failed: $e");
     }
   }
+
+
+   Future<ProfileModel> getProfile() async {
+    try {
+      final userId = await SharePrefService.instance.getUserId();
+      if (userId == null || userId.isEmpty) {
+        throw Exception("No user ID found. Please login again.");
+      }
+
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (!userDoc.exists) {
+        throw Exception("User not found in Firestore.");
+      }
+
+      return ProfileModel.fromJson(userDoc.data() as Map<String, dynamic>, userId);
+    } catch (e) {
+      throw Exception("Failed to get profile: $e");
+    }
+  }
+
 
   Future<String> createRentalContract({
     required String email,
@@ -215,4 +227,57 @@ class FirebaseService {
       throw Exception('Failed to submit inspection: $e');
     }
   }
+
+
+Future<Map<String, dynamic>> getUserContracts() async {
+  try {
+    // Get logged-in profile
+    final profile = await getProfile();
+
+    // Fetch contracts by email (since you're storing email in contracts)
+    final querySnapshot = await _firestore
+        .collection('contracts')
+        .where('email', isEqualTo: profile.email)
+        .get();
+
+      print(profile.email);
+
+
+
+    // Convert all docs into ContractModel list
+    final allContracts = querySnapshot.docs.map((doc) {
+      return ContractModel.fromJson(doc.data(), doc.id);
+    }).toList();
+
+
+    // Total contracts
+    final totalContracts = allContracts.length;
+
+    // Contracts this month
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+
+    final monthlyContracts = allContracts.where((contract) {
+      return contract.createdAt != null &&
+          contract.createdAt!.isAfter(startOfMonth);
+    }).toList();
+
+    // Active contracts
+    final activeContracts = allContracts.where((contract) {
+      return contract.status == 'active';
+    }).toList();
+
+    return {
+      'totalContracts': totalContracts,
+      'monthlyContracts': monthlyContracts.length,
+      'activeContracts': activeContracts.length,
+      'contractsList': allContracts,
+    };
+  } catch (e) {
+    throw Exception('Failed to fetch contracts: $e');
+  }
+}
+
+
+
 }

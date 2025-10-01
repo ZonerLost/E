@@ -1,8 +1,9 @@
-import 'dart:math';
-
 import 'package:edwardb/config/assets/assets.dart';
 import 'package:edwardb/config/constant/colors.dart';
+import 'package:edwardb/config/extensions/media_query_extension.dart';
 import 'package:edwardb/controllers/profile_controller/profile_controller.dart';
+import 'package:edwardb/screens/custom/custom_image/custom_image_widget.dart';
+import 'package:edwardb/screens/custom/custom_shimmer/custom_shimmer_widget.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -22,25 +23,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final profile = Get.put(ProfileController());
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: _appBar(), body: _body());
+    return Scaffold(appBar: _appBar(), body: _body(), 
+    floatingActionButton: FloatingActionButton(onPressed: (){
+      profile.logOut();
+    }, 
+    backgroundColor: kRedColor,
+    shape: OutlineInputBorder(
+      borderSide: BorderSide.none,
+      borderRadius: BorderRadius.circular(30)
+    ),
+    child: Icon(Icons.exit_to_app_outlined, color: kWhiteColor,),),
+    );
   }
 
   _appBar() {
     return AppBar(
       title: Obx(() {
-        return EdwardbText(
+        return profile.controllerIsBusy.value ? CommonShimmer(
+          height: 10,
+          width: context.screenWidth * 0.3,
+        )  :  EdwardbText(
           'Hello ${profile.profile.value.username} 👋',
           fontWeight: FontWeight.bold,
           fontSize: 28,
         );
       }),
+
       actions: [
         Obx(() {
-          return CircleAvatar(
-            backgroundColor: kWhiteColor,
-            backgroundImage: NetworkImage(profile.profile.value.avatarUrl),
-            radius: 24.r,
-          );
+          return  CommonImageView(url: profile.profile.value.avatarUrl, 
+          radius: 40,
+          isImageLoading: profile.controllerIsBusy.value);
+            
         }),
         20.horizontalSpace,
       ],
@@ -88,7 +102,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
   /// Component to display overview stats cards
   ///
   overviewStatsCards() {
-    return Row(
+    return Obx( () => profile.controllerIsBusy.value ? 
+
+      Row(
+        spacing: 10,
+        children: List.generate(3, (i)=> 
+
+        Expanded(child: SizedBox(
+            height: context.screenHeight * 0.2,
+            width: context.screenWidth,
+            child: 
+      CommonShimmer(),
+        ))
+
+      ),)
+    
+     :  Row(
       children: [
         Expanded(
           child: Container(
@@ -102,13 +131,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 EdwardbText(
-                  'Contracts This Month',
+                  'Total Contracts',
                   fontWeight: FontWeight.w500,
                   fontSize: 18,
                   color: const Color(0xFF374151),
                 ),
                 EdwardbText(
-                  '${Random().nextInt(10) + 1}',
+                  '${profile.totalContracts}',
                   fontWeight: FontWeight.w500,
                   fontSize: 38,
                   color: const Color(0xFF111827),
@@ -138,7 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: const Color(0xFFD1D5DB),
                 ),
                 EdwardbText(
-                  '${Random().nextInt(10) + 1}',
+                  '${profile.monthlyContracts}',
                   fontWeight: FontWeight.w500,
                   fontSize: 38,
                   color: Colors.white,
@@ -161,13 +190,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 EdwardbText(
-                  'Contracts This Month',
+                  'Active Contracts',
                   fontWeight: FontWeight.w500,
                   fontSize: 18,
                   color: Colors.white,
                 ),
                 EdwardbText(
-                  '${Random().nextInt(10) + 1}',
+                  '${profile.activeContracts}',
                   fontWeight: FontWeight.w500,
                   fontSize: 38,
                   color: Colors.white,
@@ -177,6 +206,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ],
+    )
     );
   }
 
