@@ -19,15 +19,14 @@ class AuthController extends GetxController implements AuthRepository {
 
   @override
   Future<void> signIn() async {
-    if (controllerIsBusy.value) return;
     try {
+      print(rememberMe.value);
       controllerIsBusy.value = true;
       await FirebaseService.instance.signIn(
         emailController.text.trim(),
         passwordController.text.trim(),
         rememberMe.value,
       );
-      Get.offAllNamed(RouteName.dashboardScreen);
     } catch (e) {
       log(e.toString());
       Get.snackbar('Error', e.toString());

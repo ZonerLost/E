@@ -9,6 +9,10 @@ import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/share_pref_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+
+import '../config/routes/routes_names.dart';
 
 class FirebaseService {
   static FirebaseService? _instance;
@@ -36,14 +40,17 @@ class FirebaseService {
       if (!userDoc.exists) {
         throw Exception("User profile not found in Firestore");
       }
-
+      print(userDoc);
+      print(user);
       // Save user ID locally if remember me is checked
       if (remember) {
         await SharePrefService.instance.addUserId(user.uid);
       } else {
         await SharePrefService.instance.clearUserId();
       }
+      Get.offAllNamed(RouteName.dashboardScreen);
     } on FirebaseAuthException catch (e) {
+
       if (e.code == 'user-not-found') {
         throw Exception('No user found for that email.');
       } else if (e.code == 'wrong-password') {

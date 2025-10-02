@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../custom/custom_text/custom_text.dart';
+import '../auth/login_screen/login_screen.dart';
 import '../new_rental_contract_screens/new_rental_contract_welcome_screen.dart';
 import 'active_contracts_section.dart';
 
