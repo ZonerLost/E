@@ -109,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         children: List.generate(3, (i)=> 
 
         Expanded(child: SizedBox(
-            height: context.screenHeight * 0.2,
+            height: context.screenHeight * 0.2 -40,
             width: context.screenWidth,
             child: 
       CommonShimmer(),
