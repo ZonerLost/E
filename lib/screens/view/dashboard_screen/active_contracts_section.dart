@@ -2,8 +2,8 @@ import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/screens/view/dashboard_screen/see_all_contract_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import '../../../controllers/profile_controller/profile_controller.dart';
 import '../../custom/custom_text/custom_text.dart';
 
 class ActiveContractsSection extends StatelessWidget {
@@ -11,6 +11,8 @@ class ActiveContractsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<ProfileController>();
+
     return Column(
       children: [
         // Header Row
@@ -92,73 +94,47 @@ class ActiveContractsSection extends StatelessWidget {
 
             12.verticalSpace,
 
-            // StreamBuilder for contracts
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('contracts')
-                  .where('status', isEqualTo: 'active')
-                  .orderBy('createdAt', descending: true)
-                  .limit(4)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Container(
-                    padding: EdgeInsets.all(20.w),
-                    child: EdwardbText(
-                      'Error loading contracts',
-                      fontSize: 14,
-                      color: Colors.red,
-                    ),
-                  );
-                }
+            // Use Obx to rebuild when contractsList updates
+            Obx(() {
+              if (controller.controllerIsBusy.value) {
+                return const Center(
+                  child: CircularProgressIndicator(color: kPrimaryColor),
+                );
+              }
 
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Container(
-                    padding: EdgeInsets.all(20.w),
-                    child: const Center(
-                      child: CircularProgressIndicator(color: kPrimaryColor),
-                    ),
-                  );
-                }
-
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Container(
-                    padding: EdgeInsets.all(20.w),
-                    child: EdwardbText(
-                      'No contracts found',
-                      fontSize: 14,
-                      color: const Color(0xFF6B7280),
-                    ),
-                  );
-                }
-
-                return SingleChildScrollView(
-                  child: Column(
-                    children: snapshot.data!.docs.map((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
-                      final contractId = doc.id;
-
-                      // Extract data from document
-                      final firstName = data['firstName'] ?? '';
-                      final lastName = data['lastName'] ?? '';
-                      final fullName = '$firstName $lastName'.trim();
-                      final date = data['date'] ?? '';
-                      final status = data['status'] ?? '';
-
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 12.h),
-                        child: _buildContractRow(
-                          name: fullName.isEmpty ? 'N/A' : fullName,
-                          refId: contractId,
-                          startDate: date.isEmpty ? 'N/A' : date,
-                          status: status,
-                        ),
-                      );
-                    }).toList(),
+              if (controller.contractsList.isEmpty) {
+                return Container(
+                  padding: EdgeInsets.all(20.w),
+                  child: EdwardbText(
+                    'No contracts found',
+                    fontSize: 14,
+                    color: const Color(0xFF6B7280),
                   ),
                 );
-              },
-            ),
+              }
+
+              return SingleChildScrollView(
+                child: Column(
+                  children: controller.contractsList
+                      .take(4) // show only 4 here
+                      .map((contract) {
+                    final fullName =
+                    '${contract.firstName ?? ''} ${contract.lastName ?? ''}'
+                        .trim();
+
+                    return Padding(
+                      padding: EdgeInsets.only(bottom: 12.h),
+                      child: _buildContractRow(
+                        name: fullName.isEmpty ? 'N/A' : fullName,
+                        refId: contract.contractId,
+                        startDate: contract.date ?? 'N/A',
+                        status: contract.status ?? '',
+                      ),
+                    );
+                  }).toList(),
+                ),
+              );
+            }),
           ],
         ),
       ],
@@ -213,7 +189,7 @@ class ActiveContractsSection extends StatelessWidget {
               decoration: BoxDecoration(
                 color: status.toLowerCase() == 'active'
                     ? const Color(0xFF10B981) // Green for active
-                    : const Color(0xFFDC2626), // Red for other statuses
+                    : const Color(0xFFDC2626), // Red otherwise
                 borderRadius: BorderRadius.circular(10.r),
               ),
               child: Center(

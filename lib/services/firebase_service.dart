@@ -278,6 +278,29 @@ Future<Map<String, dynamic>> getUserContracts() async {
   }
 }
 
+  Future<List<ContractModel>> getAllUserContracts() async {
+    try {
+      // Get logged-in profile
+      final profile = await getProfile();
+
+      // Fetch contracts by email
+      final querySnapshot = await _firestore
+          .collection('contracts')
+          .where('email', isEqualTo: profile.email)
+          .get();
+
+      // Convert all docs into ContractModel list
+      final allContracts = querySnapshot.docs.map((doc) {
+        return ContractModel.fromJson(doc.data(), doc.id);
+      }).toList();
+
+      return allContracts;
+    } catch (e) {
+      throw Exception('Failed to fetch all contracts: $e');
+    }
+  }
+
+
 
 
 }
