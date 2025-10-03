@@ -16,8 +16,13 @@ class NewRentalContractController extends GetxController {
   final email = TextEditingController();
   final firstName = TextEditingController();
   final lastName = TextEditingController();
+  final contractName = TextEditingController();
+  final initialController = TextEditingController();
   final phoneNumber = TextEditingController();
+  final cvcNumber = TextEditingController();
+  final cardExpiry = TextEditingController();
   final cardNumber = TextEditingController();
+  final licenseNumber = TextEditingController();
   final date = TextEditingController();
 
   late SignatureController signatureController;
@@ -92,6 +97,11 @@ class NewRentalContractController extends GetxController {
         driverPhotoPath: DRIVER_PHOTO.value!,
         licensePhotoPath: LICENSE_PHOTO.value!,
         signatureBytes: signatureBytes!,
+        initalController: initialController.text.trim(),
+        cardCvC: cvcNumber.text.trim(), 
+        contractNameController: contractName.text.trim(), 
+        cardExpiry: cardExpiry.text.trim(), 
+        liscenseNumber: licenseNumber.text.trim()
       );
 
       if (contractId != null) {
@@ -105,6 +115,7 @@ class NewRentalContractController extends GetxController {
             imageUrl: DRIVER_PHOTO.value,
           ),
         );
+        
       }
     } catch (e) {
       log('Error in handleSubmit: $e');
@@ -117,7 +128,7 @@ class NewRentalContractController extends GetxController {
     }
   }
 
-  void _clearForm() {
+  void clearForm() {
     email.clear();
     firstName.clear();
     lastName.clear();
@@ -128,5 +139,10 @@ class NewRentalContractController extends GetxController {
     LICENSE_PHOTO.value = null;
     signatureController.clear();
     signatureBytes = null;
+    licenseNumber.clear();
+    cardExpiry.clear();
+    cardNumber.clear();
+    contractName.clear();
+    licenseNumber.clear();
   }
 }

@@ -25,13 +25,6 @@ class ProfileController extends GetxController {
     avatarUrl: '',
   ).obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    getProfile();
-    fetchContracts();
-    fetchAllContracts();
-  }
 
   Future<void> getProfile() async {
     try {

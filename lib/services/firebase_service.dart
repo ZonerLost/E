@@ -40,14 +40,12 @@ class FirebaseService {
       if (!userDoc.exists) {
         throw Exception("User profile not found in Firestore");
       }
-      print(userDoc);
-      print(user);
+     
       // Save user ID locally if remember me is checked
       if (remember) {
         await SharePrefService.instance.addUserId(user.uid);
-      } else {
-        await SharePrefService.instance.clearUserId();
-      }
+      } 
+      
       Get.offAllNamed(RouteName.dashboardScreen);
     } on FirebaseAuthException catch (e) {
 
@@ -74,11 +72,27 @@ class FirebaseService {
   }
 
 
+  Future<String> getCurrentUser() async{
+    final uuid =  _auth.currentUser!.uid;
+      return uuid;
+
+  }
+
+
    Future<ProfileModel> getProfile() async {
     try {
+
+      
       final userId = await SharePrefService.instance.getUserId();
+
       if (userId == null || userId.isEmpty) {
-        throw Exception("No user ID found. Please login again.");
+        final uuid = await getCurrentUser();
+        final userDoc = await _firestore.collection('users').doc(uuid).get();
+        if(!userDoc.exists){
+        throw Exception("User not found in Firestore. without remember me enable");
+        }
+
+      return ProfileModel.fromJson(userDoc.data() as Map<String, dynamic>, uuid);
       }
 
       final userDoc = await _firestore.collection('users').doc(userId).get();
@@ -99,6 +113,11 @@ class FirebaseService {
     required String lastName,
     required String phoneNumber,
     required String cardNumber,
+    required String liscenseNumber,
+    required String cardCvC,
+    required String initalController,
+    required String contractNameController,
+    required String cardExpiry,
     required String date,
     required String driverPhotoPath,
     required String licensePhotoPath,
@@ -157,9 +176,14 @@ class FirebaseService {
         'phoneNumber': phoneNumber,
         'cardNumber': cardNumber,
         'date': date,
+        'licenseNumber' : liscenseNumber,
         'driverPhotoUrl': driverPhotoUrl,
         'licensePhotoUrl': licensePhotoUrl,
         'signatureUrl': signatureUrl,
+        'cvc': cardCvC,
+        'cardExpiryDate': cardExpiry,
+        'contractName': contractNameController,
+        'inital': initalController,
         'status': 'active',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -244,10 +268,9 @@ Future<Map<String, dynamic>> getUserContracts() async {
     // Fetch contracts by email (since you're storing email in contracts)
     final querySnapshot = await _firestore
         .collection('contracts')
-        .where('email', isEqualTo: profile.email)
+        .where('email', isEqualTo: profile.email.toLowerCase())
         .get();
 
-      print(profile.email);
 
 
 
@@ -290,10 +313,11 @@ Future<Map<String, dynamic>> getUserContracts() async {
       // Get logged-in profile
       final profile = await getProfile();
 
+        print(profile.email);
       // Fetch contracts by email
       final querySnapshot = await _firestore
           .collection('contracts')
-          .where('email', isEqualTo: profile.email)
+          .where('email', isEqualTo: profile.email.toLowerCase())
           .get();
 
       // Convert all docs into ContractModel list

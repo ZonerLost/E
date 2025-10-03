@@ -18,6 +18,8 @@ class SeeAllContractScreen extends StatefulWidget {
 class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+    final controller = Get.find<ProfileController>();
+
 
   // STEP 1: Add state for the sort/filter dropdown
   String _selectedSortOption = 'Date (Latest)';
@@ -52,7 +54,6 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.find<ProfileController>();
     return Scaffold(appBar: _appBar(), body: _body(controller));
   }
 

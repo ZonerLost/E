@@ -1,6 +1,5 @@
 import 'dart:developer';
 
-import 'package:edwardb/config/routes/routes_names.dart';
 import 'package:edwardb/controllers/auth_controller/auth_repository.dart';
 import 'package:edwardb/services/firebase_service.dart';
 import 'package:flutter/material.dart';
@@ -20,7 +19,6 @@ class AuthController extends GetxController implements AuthRepository {
   @override
   Future<void> signIn() async {
     try {
-      print(rememberMe.value);
       controllerIsBusy.value = true;
       await FirebaseService.instance.signIn(
         emailController.text.trim(),
@@ -34,7 +32,4 @@ class AuthController extends GetxController implements AuthRepository {
       controllerIsBusy.value = false;
     }
   }
-
-
-
 }

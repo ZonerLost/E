@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -14,6 +15,7 @@ class EdwardbTextField extends StatelessWidget {
   final bool obscureText;
   final TextInputType keyboardType;
   final int maxLines;
+  final  List<TextInputFormatter>? inputFormatters;
 
   const EdwardbTextField({
     super.key,
@@ -25,6 +27,7 @@ class EdwardbTextField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType = TextInputType.text,
     this.maxLines = 1,
+    this.inputFormatters
   });
 
   @override
@@ -36,6 +39,7 @@ class EdwardbTextField extends StatelessWidget {
       obscureText: obscureText,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      inputFormatters: inputFormatters,
       style: GoogleFonts.inter(color: kTextPrimaryColor, fontSize: 16.sp),
       decoration: InputDecoration(
         hintText: hintText,

@@ -2,8 +2,6 @@ import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/controllers/inspection_controller/inspection_controller.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
 import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
-import 'package:edwardb/screens/view/new_rental_contract_screens/new_rental_contract_info_screen.dart';
-import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_contract_listing_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -118,7 +116,7 @@ class VehicleInspectionConfirmScreen extends StatelessWidget {
                 return controller.isLoading.value
                     ? Center(child: CircularProgressIndicator())
                     : EdwardbButton(
-                        label: 'Begin',
+                        label: 'Submit',
                         onPressed: () {
                           // Handle button press
                           controller.submitInspection();

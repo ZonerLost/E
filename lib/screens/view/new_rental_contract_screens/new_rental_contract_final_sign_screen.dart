@@ -177,7 +177,7 @@ class _NewRentalContractFinalSignScreenState
               child: SizedBox(
                 height: 55.h,
                 child: EdwardbTextField(
-                  controller: controller.cardNumber,
+                  controller: controller.licenseNumber,
                   hintText: 'License Number',
                   readOnly: true,
                 ),
@@ -196,6 +196,42 @@ class _NewRentalContractFinalSignScreenState
             ),
           ],
         ),
+        40.verticalSpace,
+
+        Row(
+          children: [
+            Expanded(
+              child: SizedBox(
+                height: 55.h,
+                child: EdwardbTextField(
+                  controller: controller.cardNumber,
+                  hintText: 'Card Number',
+                  readOnly: true,
+                ),
+              ),
+            ),
+            20.horizontalSpace,
+            Expanded(
+              child: SizedBox(
+                height: 55.h,
+                child: EdwardbTextField(
+                  controller: controller.date,
+                  hintText: 'Card Expiry Date',
+                  readOnly: true,
+                ),
+              ),
+            ),
+          ],
+        ),
+        40.verticalSpace,
+        SizedBox(
+                height: 55.h,
+                child: EdwardbTextField(
+                  controller: controller.cvcNumber,
+                  hintText: 'CVV',
+                  readOnly: true,
+                ),
+              ),
       ],
     );
   }

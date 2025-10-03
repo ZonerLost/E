@@ -1,9 +1,8 @@
-import 'package:edwardb/config/constant/colors.dart';
+
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
 import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
 import 'package:edwardb/screens/custom/custom_text_from_field/custom_text_from_field.dart';
-import 'package:edwardb/screens/view/new_rental_contract_screens/new_rental_contract_driver_photo_screen.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/term_condition.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -135,25 +134,24 @@ class _NewRentalContractInfoScreenState
                 ),
                 40.verticalSpace,
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  // crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 20,
                   children: [
                     Expanded(
                       child: EdwardbTextField(
-                        controller: controller.cardNumber,
-                        hintText: 'Card Number',
+                        controller: controller.licenseNumber,
+                        hintText: 'License Number',
+                        
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your card number';
+                            return 'Please enter the license number';
                           }
-                          if (value.length < 16) {
-                            return 'Card number must be at least 16 digits';
-                          }
+                          // Add date validation if needed
                           return null;
                         },
                       ),
                     ),
-                    20.horizontalSpace,
                     Expanded(
                       child: GestureDetector(
                         onTap: () async {
@@ -166,6 +164,7 @@ class _NewRentalContractInfoScreenState
                           child: EdwardbTextField(
                             controller: controller.date,
                             hintText: 'Date',
+                            readOnly: true,
                             keyboardType: TextInputType.datetime,
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -178,6 +177,8 @@ class _NewRentalContractInfoScreenState
                         ),
                       ),
                     ),
+                   
+                    
                   ],
                 ),
 
