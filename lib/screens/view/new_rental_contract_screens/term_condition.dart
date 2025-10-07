@@ -173,11 +173,7 @@ class _TermConditionState extends State<TermCondition> {
                       borderRadius: BorderRadius.circular(8.r),
                     ),
                     child: Signature(
-                      controller: SignatureController(
-                        penStrokeWidth: 2,
-                        penColor: Colors.black,
-                        exportBackgroundColor: Colors.white,
-                      ),
+                      controller: controller.signatureControllerName,
                       height: 200.h,
                       backgroundColor: kWhiteColor,
                     ),
@@ -233,6 +229,27 @@ class _TermConditionState extends State<TermCondition> {
                   EdwardbTextField(
                     controller: controller.initialController,
                     hintText: 'Initial Here',
+                  ),
+                  SizedBox(height: 16.h),
+                  
+                  EdwardbText(
+                    'Enter signature using stylus or finger',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    maxLines: 50,
+                    textAlign: TextAlign.justify,
+                  ), 
+              
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Signature(
+                      controller: controller.signatureControllerInital,
+                      height: 200.h,
+                      backgroundColor: kWhiteColor,
+                    ),
                   ),
                   SizedBox(height: 16.h),
                   EdwardbText(
@@ -400,7 +417,14 @@ class _TermConditionState extends State<TermCondition> {
                        String date = await Utils.showDatePickerDialog(
                          context,
                        );
-                       controller.cardExpiry.text = date;
+                      if (date.isNotEmpty) {
+    // Split and keep only month/year
+    final parts = date.split('/'); // ['7', '10', '2025']
+    if (parts.length == 3) {
+      final formatted = "${parts[1]}/${parts[2]}"; // "10/2025"
+      controller.cardExpiry.text = formatted;
+    }
+  }
                      },
                      child: AbsorbPointer(
                        child: EdwardbTextField(
@@ -412,7 +436,7 @@ class _TermConditionState extends State<TermCondition> {
                            if (value == null || value.isEmpty) {
                              return 'Please enter the date';
                            }
-                           // Add date validation if needed
+                          
                            return null;
                          },
                        ),
@@ -430,93 +454,123 @@ class _TermConditionState extends State<TermCondition> {
                   ),
               
                   SizedBox(height: 24.h),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  Row(
                     children: [
-                      // First checkbox
-                      Obx(
-                        () => CheckboxListTile(
-                          value: isChecked_1.value,
-                          onChanged: (bool? value) {
-                            isChecked_1.value = value ?? false;
-                          },
-                          title: EdwardbText(
-                            'I agree to the Terms & Conditions',
-                            fontSize: 16,
-                            maxLines: 3,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          activeColor: kPrimaryColor,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // First checkbox
+                            Obx(
+                              () => CheckboxListTile(
+                                value: isChecked_1.value,
+                                onChanged: (bool? value) {
+                                  isChecked_1.value = value ?? false;
+                                },
+                                title: EdwardbText(
+                                  'I agree to the Terms & Conditions',
+                                  fontSize: 16,
+                                  maxLines: 3,
+                                ),
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                activeColor: kPrimaryColor,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                                      
+                            // Second checkbox
+                            Obx(
+                              () => CheckboxListTile(
+                                value: isChecked_2.value,
+                                onChanged: (bool? value) {
+                                  isChecked_2.value = value ?? false;
+                                },
+                                title: EdwardbText(
+                                  'I understand the damage policy',
+                                  fontSize: 16,
+                                  maxLines: 3,
+                                ),
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                activeColor: kPrimaryColor,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                                      
+                            // Third checkbox
+                            Obx(
+                              () => CheckboxListTile(
+                                value: isChecked_3.value,
+                                onChanged: (bool? value) {
+                                  isChecked_3.value = value ?? false;
+                                },
+                                title: EdwardbText(
+                                  'I agree to the late return penalty',
+                                  fontSize: 16,
+                                  maxLines: 3,
+                                ),
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                      
+                                activeColor: kPrimaryColor,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                                      
+                            // Fourth checkbox
+                            Obx(
+                              () => CheckboxListTile(
+                                value: isChecked_4.value,
+                                onChanged: (bool? value) {
+                                  isChecked_4.value = value ?? false;
+                                },
+                                title: EdwardbText(
+                                  'I confirm the fuel refill clause',
+                                  fontSize: 16,
+                                  maxLines: 3,
+                                ),
+                                controlAffinity: ListTileControlAffinity.leading,
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                                activeColor: kPrimaryColor,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      Expanded(child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                           EdwardbText(
+                    'Enter signature using stylus or finger',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 18,
+                    maxLines: 50,
+                    textAlign: TextAlign.justify,
+                  ), 
               
-                      // Second checkbox
-                      Obx(
-                        () => CheckboxListTile(
-                          value: isChecked_2.value,
-                          onChanged: (bool? value) {
-                            isChecked_2.value = value ?? false;
-                          },
-                          title: EdwardbText(
-                            'I understand the damage policy',
-                            fontSize: 16,
-                            maxLines: 3,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          activeColor: kPrimaryColor,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-              
-                      // Third checkbox
-                      Obx(
-                        () => CheckboxListTile(
-                          value: isChecked_3.value,
-                          onChanged: (bool? value) {
-                            isChecked_3.value = value ?? false;
-                          },
-                          title: EdwardbText(
-                            'I agree to the late return penalty',
-                            fontSize: 16,
-                            maxLines: 3,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-              
-                          activeColor: kPrimaryColor,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
-              
-                      // Fourth checkbox
-                      Obx(
-                        () => CheckboxListTile(
-                          value: isChecked_4.value,
-                          onChanged: (bool? value) {
-                            isChecked_4.value = value ?? false;
-                          },
-                          title: EdwardbText(
-                            'I confirm the fuel refill clause',
-                            fontSize: 16,
-                            maxLines: 3,
-                          ),
-                          controlAffinity: ListTileControlAffinity.leading,
-                          contentPadding: EdgeInsets.zero,
-                          dense: true,
-                          activeColor: kPrimaryColor,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      ),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(8.r),
+                    ),
+                    child: Signature(
+                      controller: controller.signatureControllerCard,
+                      height: 200.h,
+                      backgroundColor: kWhiteColor,
+                    ),
+                  ),
+                        ],
+                      ))
                     ],
                   ),
                   SizedBox(height: 40.h),

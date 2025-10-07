@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_confirm_screen.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_selected_screen.dart';

@@ -1,3 +1,4 @@
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:edwardb/config/assets/assets.dart';
 import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/config/extensions/media_query_extension.dart';
@@ -24,13 +25,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
    profile.getProfile();
     profile.fetchContracts();
     profile.fetchAllContracts();
-    print("init func");
   }
+
+
+
+// Future<void> uploadInspection() async {
+//   try {
+//     // Create instance of your cloud function
+//     final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
+//     final callable = functions.httpsCallable('uploadInspectionToDrive');
+
+//     // Call function with parameters
+//     final result = await callable.call(<String, dynamic>{
+//       'username': 'testuser',
+//       'videoUrl': 'https://example.com/testvideo.mp4',
+//       'signatureUrl': 'https://example.com/testsignature.png',
+//     });
+
+//     print('Success: ${result.data}');
+//   } catch (e) {
+//     print('Error calling function: $e');
+//   }
+// }
 
 
   @override
@@ -38,6 +58,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(appBar: _appBar(), body: _body(), 
     floatingActionButton: FloatingActionButton(onPressed: (){
       profile.logOut();
+      // uploadInspection();
     }, 
     backgroundColor: kRedColor,
     shape: OutlineInputBorder(

@@ -121,7 +121,10 @@ class FirebaseService {
     required String date,
     required String driverPhotoPath,
     required String licensePhotoPath,
+    required String licensePhotoCustomer,
     required Uint8List signatureBytes,
+    required Uint8List signatureBytesCard,
+    required Uint8List signatureBytesInitals,
   }) async {
     try {
       // Generate contract ID first
@@ -141,6 +144,19 @@ class FirebaseService {
       final driverPhotoBytes = await File(driverPhotoPath).readAsBytes();
       await driverPhotoRef.putData(driverPhotoBytes);
       final driverPhotoUrl = await driverPhotoRef.getDownloadURL();
+      // Upload driver photo to Firebase Storage
+      final customerDriverPhotoRef = _storage
+          .ref()
+          .child('contracts')
+          .child(contractId)
+          .child(
+            'license-driver-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
+          );
+
+      // Read driver photo file
+      final customerDriverPhotoBytes = await File(driverPhotoPath).readAsBytes();
+      await customerDriverPhotoRef.putData(customerDriverPhotoBytes);
+      final customerDriverPhotoUrl = await driverPhotoRef.getDownloadURL();
 
       // Upload license photo to Firebase Storage
       final licensePhotoRef = _storage
@@ -164,8 +180,32 @@ class FirebaseService {
           .child(
             'signature-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
           );
+
+      // Signature of Card
+      final signatureRefCard = _storage
+          .ref()
+          .child('contracts')
+          .child(contractId)
+          .child(
+            'card-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
+          );
+      // Signature Initals
+      final signatureRefInitial = _storage
+          .ref()
+          .child('contracts')
+          .child(contractId)
+          .child(
+            'inital-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
+          );
+
       await signatureRef.putData(signatureBytes);
       final signatureUrl = await signatureRef.getDownloadURL();
+
+      await signatureRefCard.putData(signatureBytesCard);
+      final signatureUrlCard = await signatureRefCard.getDownloadURL();
+
+      await signatureRefInitial.putData(signatureBytesCard);
+      final signatureInitial = await signatureRefCard.getDownloadURL();
 
       // Create rental contract document in Firestore
       final contractData = {
@@ -176,14 +216,17 @@ class FirebaseService {
         'phoneNumber': phoneNumber,
         'cardNumber': cardNumber,
         'date': date,
+        'customerDriverLiscensePhotoUrl': customerDriverPhotoUrl,
         'licenseNumber' : liscenseNumber,
         'driverPhotoUrl': driverPhotoUrl,
         'licensePhotoUrl': licensePhotoUrl,
         'signatureUrl': signatureUrl,
+        'signatureCard': signatureUrlCard,
         'cvc': cardCvC,
         'cardExpiryDate': cardExpiry,
         'contractName': contractNameController,
         'inital': initalController,
+        'initalSignature': signatureInitial,
         'status': 'active',
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -313,7 +356,6 @@ Future<Map<String, dynamic>> getUserContracts() async {
       // Get logged-in profile
       final profile = await getProfile();
 
-        print(profile.email);
       // Fetch contracts by email
       final querySnapshot = await _firestore
           .collection('contracts')

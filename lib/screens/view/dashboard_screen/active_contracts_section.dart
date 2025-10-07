@@ -115,8 +115,9 @@ class ActiveContractsSection extends StatelessWidget {
 
               return SingleChildScrollView(
                 child: Column(
-                  children: controller.contractsList
-                      .take(10) // show only 4 here
+                    children: controller.contractsList
+                      .reversed 
+                      .take(5)
                       .map((contract) {
                     final fullName =
                     '${contract.firstName ?? ''} ${contract.lastName ?? ''}'

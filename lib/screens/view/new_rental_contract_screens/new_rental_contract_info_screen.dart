@@ -1,6 +1,9 @@
 
+import 'dart:io';
+
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
+import 'package:edwardb/screens/custom/custom_camera/custom_camera.dart';
 import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
 import 'package:edwardb/screens/custom/custom_text_from_field/custom_text_from_field.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/term_condition.dart';
@@ -24,7 +27,9 @@ class _NewRentalContractInfoScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(appBar: _appBar(), body: _body());
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      appBar: _appBar(), body: _body());
   }
 
   _appBar() {
@@ -181,13 +186,95 @@ class _NewRentalContractInfoScreenState
                     
                   ],
                 ),
+                            60.verticalSpace,
+
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 20.w,
+                    vertical: 15.h,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: const Color(0xFFE5E7EB)),
+                    color: Colors.white,
+                  ),
+                  child: Row(
+                    children: [
+                      // License Photo Section - Rectangle Shape
+                      Obx(() {
+                        return controller.CUSTOMER_LICENSE_PHOTO.value != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: Container(
+                                  width: 190.w,
+                                  height: 140.h,
+                                  decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                      image: FileImage(
+                                        File(controller.CUSTOMER_LICENSE_PHOTO.value!),
+                                      ),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Container(
+                                width: 140.w,
+                                height: 90.h,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8.r),
+                                  color: const Color(0xFFF3F4F6),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                                child: Icon(
+                                  Icons.card_membership_rounded,
+                                  color: const Color(0xFF6B7280),
+                                  size: 40.sp,
+                                ),
+                              );
+                      }),
+                      Expanded(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            10.horizontalSpace,
+
+                            EdwardbText("Take Driver License Photo"),
+
+                            60.horizontalSpace,
+
+                            Expanded(
+                              child: SizedBox(
+                                width: 240.w,
+                                child: EdwardbButton(
+                                  label: 'Take Photo',
+                                  onPressed: () async {
+
+                                 var g =  await Get.to(CameraScreen(useFrontCamera: true));
+                                 if(g != null){
+                                  controller.CUSTOMER_LICENSE_PHOTO.value = g;
+                                 
+                                 }
+                                  },
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 100.verticalSpace,
 
                 EdwardbButton(
                   label: 'Next',
                   onPressed: () {
-                    if (formKey.currentState!.validate()) {
+                    if (formKey.currentState!.validate() || controller.validateDriverLicensePhoto()) {
                       // Handle next button press
                       Get.to(() => TermCondition());
                     }

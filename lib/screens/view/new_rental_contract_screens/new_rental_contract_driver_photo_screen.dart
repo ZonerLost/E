@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:edwardb/controllers/new_rental_contract_controller/new_rental_contract_controller.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
+import 'package:edwardb/screens/custom/custom_camera/custom_camera.dart';
 import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/new_rental_contract_final_sign_screen.dart';
 import 'package:flutter/material.dart';
@@ -107,7 +108,8 @@ class _NewRentalContractDriverPhotoScreenState
                               width: 240.w,
                               child: EdwardbButton(
                                 label: 'Take Photo',
-                                onPressed: () => controller.pickDriverPhoto(),
+                                onPressed: () => Get.to(CameraScreen(useFrontCamera: true)),
+
                               ),
                             ),
                           ],
@@ -177,7 +179,8 @@ class _NewRentalContractDriverPhotoScreenState
                               width: 240.w,
                               child: EdwardbButton(
                                 label: 'Take Photo',
-                                onPressed: () => controller.pickLicensePhoto(),
+                                onPressed: () => Get.to(CameraScreen(useFrontCamera: false)),
+
                               ),
                             ),
                           ],

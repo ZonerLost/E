@@ -26,7 +26,12 @@ class NewRentalContractController extends GetxController {
   final date = TextEditingController();
 
   late SignatureController signatureController;
+  late SignatureController signatureControllerInital;
+  late SignatureController signatureControllerName;
+  late SignatureController signatureControllerCard;
   Uint8List? signatureBytes;
+  Uint8List? signatureBytesCards;
+  Uint8List? signatureBytesInitial;
 
   @override
   void onInit() {
@@ -36,10 +41,26 @@ class NewRentalContractController extends GetxController {
       penColor: Colors.black,
       exportBackgroundColor: Colors.white,
     );
+    signatureControllerInital = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
+    signatureControllerName = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
+    signatureControllerCard = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
   }
 
   RxnString DRIVER_PHOTO = RxnString();
   RxnString LICENSE_PHOTO = RxnString();
+  RxnString CUSTOMER_LICENSE_PHOTO = RxnString();
 
   Future<void> pickDriverPhoto() async {
     try {
@@ -61,12 +82,32 @@ class NewRentalContractController extends GetxController {
     }
   }
 
+  Future<void> pickCustomerLicensePhoto() async {
+    try {
+      final result = await Utils.pickImageFromCamera();
+      if (result == null) throw Exception('No image selected');
+      CUSTOMER_LICENSE_PHOTO.value = result.path;
+    } catch (e) {
+      log('Error picking image: $e');
+    }
+  }
+
   bool validateDriverAndLicensePhoto() {
     if (DRIVER_PHOTO.value == null) {
       Utils.showErrorSnackbar('Error', 'Please take a driver photo.');
       return false;
     }
+
     if (LICENSE_PHOTO.value == null) {
+      Utils.showErrorSnackbar('Error', 'Please take a license photo.');
+      return false;
+    }
+    return true;
+  }
+
+
+  bool validateDriverLicensePhoto() {
+    if (CUSTOMER_LICENSE_PHOTO.value == null) {
       Utils.showErrorSnackbar('Error', 'Please take a license photo.');
       return false;
     }
@@ -79,6 +120,8 @@ class NewRentalContractController extends GetxController {
       return false;
     } else {
       signatureBytes = await signatureController.toPngBytes();
+      signatureBytesCards = await signatureController.toPngBytes();
+      signatureBytesInitial = await signatureController.toPngBytes();
       return true;
     }
   }
@@ -94,14 +137,17 @@ class NewRentalContractController extends GetxController {
         phoneNumber: phoneNumber.text.trim(),
         cardNumber: cardNumber.text.trim(),
         date: date.text.trim(),
+        licensePhotoCustomer: CUSTOMER_LICENSE_PHOTO.value!,
         driverPhotoPath: DRIVER_PHOTO.value!,
         licensePhotoPath: LICENSE_PHOTO.value!,
         signatureBytes: signatureBytes!,
         initalController: initialController.text.trim(),
         cardCvC: cvcNumber.text.trim(), 
+        signatureBytesCard: signatureBytesCards!,
         contractNameController: contractName.text.trim(), 
         cardExpiry: cardExpiry.text.trim(), 
-        liscenseNumber: licenseNumber.text.trim()
+        liscenseNumber: licenseNumber.text.trim(),
+        signatureBytesInitals: signatureBytesInitial!
       );
 
       if (contractId != null) {
@@ -139,6 +185,7 @@ class NewRentalContractController extends GetxController {
     LICENSE_PHOTO.value = null;
     signatureController.clear();
     signatureBytes = null;
+    signatureBytesCards = null;
     licenseNumber.clear();
     cardExpiry.clear();
     cardNumber.clear();
