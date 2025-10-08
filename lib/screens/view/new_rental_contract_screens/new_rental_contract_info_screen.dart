@@ -253,7 +253,7 @@ class _NewRentalContractInfoScreenState
                                   label: 'Take Photo',
                                   onPressed: () async {
 
-                                 var g =  await Get.to(CameraScreen(useFrontCamera: true));
+                                 var g =  await Get.to(CameraScreen(useFrontCamera: false));
                                  if(g != null){
                                   controller.CUSTOMER_LICENSE_PHOTO.value = g;
                                  

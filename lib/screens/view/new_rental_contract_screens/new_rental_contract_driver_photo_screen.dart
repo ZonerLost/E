@@ -108,7 +108,14 @@ class _NewRentalContractDriverPhotoScreenState
                               width: 240.w,
                               child: EdwardbButton(
                                 label: 'Take Photo',
-                                onPressed: () => Get.to(CameraScreen(useFrontCamera: true)),
+                                onPressed: () async {
+                                    var g =  await Get.to(CameraScreen(useFrontCamera: true));
+                                 if(g != null){
+                                  controller.DRIVER_PHOTO.value = g;
+                                 
+                                 }
+                                
+                                },
 
                               ),
                             ),
@@ -179,7 +186,14 @@ class _NewRentalContractDriverPhotoScreenState
                               width: 240.w,
                               child: EdwardbButton(
                                 label: 'Take Photo',
-                                onPressed: () => Get.to(CameraScreen(useFrontCamera: false)),
+                                onPressed: () async {
+                                    var g =  await Get.to(CameraScreen(useFrontCamera: false));
+                                 if(g != null){
+                                  controller.LICENSE_PHOTO.value = g;
+                                 
+                                 }
+                                 
+                                },
 
                               ),
                             ),

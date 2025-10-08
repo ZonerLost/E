@@ -226,14 +226,14 @@ class _TermConditionState extends State<TermCondition> {
                     maxLines: 50,
                   ),
                   SizedBox(height: 16.h),
-                  EdwardbTextField(
-                    controller: controller.initialController,
-                    hintText: 'Initial Here',
-                  ),
-                  SizedBox(height: 16.h),
+                  // EdwardbTextField(
+                  //   controller: controller.initialController,
+                  //   hintText: 'Initial Here',
+                  // ),
+                  // SizedBox(height: 16.h),
                   
                   EdwardbText(
-                    'Enter signature using stylus or finger',
+                    'Enter inital signature using stylus or finger',
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
                     maxLines: 50,

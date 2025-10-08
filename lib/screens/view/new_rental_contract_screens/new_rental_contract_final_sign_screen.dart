@@ -21,6 +21,19 @@ class _NewRentalContractFinalSignScreenState
     extends State<NewRentalContractFinalSignScreen> {
   final controller = Get.find<NewRentalContractController>();
 
+
+  @override
+  void initState() {
+    super.initState();
+    if (controller.cardExpiry.text.isNotEmpty) {
+      final parts = controller.cardExpiry.text.split('/');
+      if (parts.length == 3) {
+        final formatted = "${parts[1].padLeft(2, '0')}/${parts[2]}";
+        controller.cardExpiry.text = formatted;
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(appBar: _appBar(), body: _body());
@@ -214,7 +227,7 @@ class _NewRentalContractFinalSignScreenState
               child: SizedBox(
                 height: 55.h,
                 child: EdwardbTextField(
-                  controller: controller.date,
+                  controller: controller.cardExpiry,
                   hintText: 'Card Expiry Date',
                   readOnly: true,
                 ),

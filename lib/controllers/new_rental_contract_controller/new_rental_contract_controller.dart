@@ -141,7 +141,7 @@ class NewRentalContractController extends GetxController {
         driverPhotoPath: DRIVER_PHOTO.value!,
         licensePhotoPath: LICENSE_PHOTO.value!,
         signatureBytes: signatureBytes!,
-        initalController: initialController.text.trim(),
+        // initalController: initialController.text.trim(),
         cardCvC: cvcNumber.text.trim(), 
         signatureBytesCard: signatureBytesCards!,
         contractNameController: contractName.text.trim(), 
