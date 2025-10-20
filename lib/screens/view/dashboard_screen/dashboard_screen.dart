@@ -1,4 +1,4 @@
-import 'package:cloud_functions/cloud_functions.dart';
+
 import 'package:edwardb/config/assets/assets.dart';
 import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/config/extensions/media_query_extension.dart';
@@ -6,6 +6,7 @@ import 'package:edwardb/controllers/profile_controller/profile_controller.dart';
 import 'package:edwardb/screens/custom/custom_image/custom_image_widget.dart';
 import 'package:edwardb/screens/custom/custom_shimmer/custom_shimmer_widget.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_welcome_screen.dart';
+import 'package:edwardb/services/dummydata.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -33,32 +34,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 
 
-// Future<void> uploadInspection() async {
-//   try {
-//     // Create instance of your cloud function
-//     final functions = FirebaseFunctions.instanceFor(region: 'us-central1');
-//     final callable = functions.httpsCallable('uploadInspectionToDrive');
-
-//     // Call function with parameters
-//     final result = await callable.call(<String, dynamic>{
-//       'username': 'testuser',
-//       'videoUrl': 'https://example.com/testvideo.mp4',
-//       'signatureUrl': 'https://example.com/testsignature.png',
-//     });
-
-//     print('Success: ${result.data}');
-//   } catch (e) {
-//     print('Error calling function: $e');
-//   }
-// }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(appBar: _appBar(), body: _body(), 
-    floatingActionButton: FloatingActionButton(onPressed: (){
-      profile.logOut();
-      // uploadInspection();
+    floatingActionButton: FloatingActionButton(onPressed: ()async{
+      // profile.logOut();
+      // await FirebaseAuth.instance.signInAnonymously();
+     await DriveDummyUploader.runAll();
+
+      
+      // final harness = DriveTestHarness(region: 'us-central1');
+// await harness.runAll();
     }, 
     backgroundColor: kRedColor,
     shape: OutlineInputBorder(

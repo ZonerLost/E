@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
+import 'package:month_picker_dialog/month_picker_dialog.dart';
 
 class Utils {
   static Future<String> showDatePickerDialog(BuildContext context) {
@@ -22,6 +24,23 @@ class Utils {
       }
     });
   }
+
+static Future<String> showMothPickerDialog(BuildContext context) async {
+  final DateTime? selectedDate = await showMonthPicker(
+    context: context,
+    initialDate: DateTime.now(),
+    firstDate: DateTime(2000),
+    lastDate: DateTime(2101),
+  );
+
+  if (selectedDate != null) {
+    final formattedDate = DateFormat('MMM/yyyy').format(selectedDate);
+    return formattedDate; 
+  } else {
+    return '';
+  }
+}
+
 
   static Future<XFile?> pickImageFromCamera() async {
     final ImagePicker picker = ImagePicker();

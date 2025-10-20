@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edwardb/model/contract_model.dart';
 import 'package:edwardb/model/profile_model.dart';
+import 'package:edwardb/services/google_drive_services.dart';
 import 'package:edwardb/services/share_pref_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -120,7 +121,7 @@ class FirebaseService {
     required String cardExpiry,
     required String date,
     required String driverPhotoPath,
-    required String licensePhotoPath,
+    // required String licensePhotoPath,
     required String licensePhotoCustomer,
     required Uint8List signatureBytes,
     required Uint8List signatureBytesCard,
@@ -159,18 +160,18 @@ class FirebaseService {
       final customerDriverPhotoUrl = await driverPhotoRef.getDownloadURL();
 
       // Upload license photo to Firebase Storage
-      final licensePhotoRef = _storage
-          .ref()
-          .child('contracts')
-          .child(contractId)
-          .child(
-            'license-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
-          );
+      // final licensePhotoRef = _storage
+      //     .ref()
+      //     .child('contracts')
+      //     .child(contractId)
+      //     .child(
+      //       'license-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
+      //     );
 
       // Read license photo file
-      final licensePhotoBytes = await File(licensePhotoPath).readAsBytes();
-      await licensePhotoRef.putData(licensePhotoBytes);
-      final licensePhotoUrl = await licensePhotoRef.getDownloadURL();
+      // final licensePhotoBytes = await File(licensePhotoPath).readAsBytes();
+      // await licensePhotoRef.putData(licensePhotoBytes);
+      // final licensePhotoUrl = await licensePhotoRef.getDownloadURL();
 
       // Upload signature to Firebase Storage
       final signatureRef = _storage
@@ -219,7 +220,7 @@ class FirebaseService {
         'customerDriverLiscensePhotoUrl': customerDriverPhotoUrl,
         'licenseNumber' : liscenseNumber,
         'driverPhotoUrl': driverPhotoUrl,
-        'licensePhotoUrl': licensePhotoUrl,
+        // 'licensePhotoUrl': licensePhotoUrl,
         'signatureUrl': signatureUrl,
         'signatureCard': signatureUrlCard,
         'cvc': cardCvC,
@@ -235,6 +236,25 @@ class FirebaseService {
       log.log('Contract Data: $contractData');
 
       await contractRef.set(contractData);
+      await GoogleDriveService.uploadContractBundleToSharedDrive(
+  sharedDriveId: "13Epy1TxTK3gRvKXLXc6IbNspYu05mRJ2",
+  username: "$firstName $lastName",
+  contractId: contractId,
+  contractData: contractData,
+  parentFolderName: 'Contracts', // optional parent in the drive
+  imageFilePaths: {
+    if (driverPhotoPath.isNotEmpty) 'driverPhoto': driverPhotoPath,
+    if (licensePhotoCustomer.isNotEmpty) 'customerLicensePhoto': licensePhotoCustomer,
+    // if you also captured a separate license photo path:
+    // 'licensePhoto': licensePhotoPath,
+  },
+  imageBytes: {
+    'signature': signatureBytes,
+    'signatureCard': signatureBytesCard,
+    'signatureInitial': signatureBytesInitals,
+  },
+  anyoneCanView: false, // set true if you want link-shareable files
+);
       return contractId;
     } catch (e) {
       throw Exception('Failed to create rental contract: $e');
@@ -252,6 +272,7 @@ class FirebaseService {
   }
 
   Future<bool> submitInspection({
+    required String  name,
     required String contractId,
     required String videoFilePath,
     required Uint8List signatureBytes,
@@ -294,6 +315,29 @@ class FirebaseService {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
+       await GoogleDriveService.uploadContractBundleToSharedDrive(
+      sharedDriveId: "1eG_P8KSek5-_dv-gMqkPjae4t2TO9vbS",
+      username: name,                 
+      contractId: contractId,             
+      parentFolderName: 'Contracts',     
+      contractData: {
+        'type': 'inspection',
+        'contractId': contractId,
+        'videoUrl': videoUrl,
+        'signatureUrl': signatureUrl,
+        // For the JSON snapshot we can add a local timestamp too:
+        'submittedAtLocal': DateTime.now().toIso8601String(),
+      },
+      // Upload the original local files too:
+      imageFilePaths: {
+        'inspectionVideo': videoFilePath, // will detect mime and upload as file
+      },
+      imageBytes: {
+        'inspectionSignature': signatureBytes, // uploads as "<username> - inspectionSignature.png"
+      },
+      anyoneCanView: false, // set true if you want link-shareable files
+    );
+
       await _firestore.collection('inspection').add(inspectionData);
 
       return true;
@@ -301,6 +345,7 @@ class FirebaseService {
       throw Exception('Failed to submit inspection: $e');
     }
   }
+
 
 
 Future<Map<String, dynamic>> getUserContracts() async {
@@ -315,13 +360,10 @@ Future<Map<String, dynamic>> getUserContracts() async {
         .get();
 
 
-
-
     // Convert all docs into ContractModel list
     final allContracts = querySnapshot.docs.map((doc) {
       return ContractModel.fromJson(doc.data(), doc.id);
     }).toList();
-
 
     // Total contracts
     final totalContracts = allContracts.length;
@@ -373,6 +415,29 @@ Future<Map<String, dynamic>> getUserContracts() async {
     }
   }
 
+
+Future<ContractModel?> markContractAsComplete(String contractId) async {
+  try {
+    final contractRef = _firestore.collection('contracts').doc(contractId);
+
+    // Update only status field
+    await contractRef.update({
+      'status': 'complete',
+      'updatedAt': DateTime.now(),
+    });
+
+    // Fetch updated document to return latest data
+    final updatedDoc = await contractRef.get();
+
+    if (updatedDoc.exists) {
+      return ContractModel.fromJson(updatedDoc.data()!, updatedDoc.id);
+    } else {
+      return null;
+    }
+  } catch (e) {
+    throw Exception('Failed to update contract status: $e');
+  }
+}
 
 
 

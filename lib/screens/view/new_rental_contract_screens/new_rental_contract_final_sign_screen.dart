@@ -33,6 +33,7 @@ class _NewRentalContractFinalSignScreenState
       }
     }
   }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -306,72 +307,72 @@ class _NewRentalContractFinalSignScreenState
 
         20.verticalSpace,
 
-        // License Photo Section
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 15.h),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10.r),
-            border: Border.all(color: const Color(0xFFE5E7EB)),
-            color: Colors.white,
-          ),
-          child: Row(
-            children: [
-              Obx(() {
-                return controller.LICENSE_PHOTO.value != null
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(8.r),
-                        child: Container(
-                          width: 80.w,
-                          height: 50.h,
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: FileImage(
-                                File(controller.LICENSE_PHOTO.value!),
-                              ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                      )
-                    : Container(
-                        width: 80.w,
-                        height: 50.h,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8.r),
-                          color: const Color(0xFFF3F4F6),
-                          border: Border.all(color: const Color(0xFFE5E7EB)),
-                        ),
-                        child: Icon(
-                          Icons.card_membership_rounded,
-                          color: const Color(0xFF6B7280),
-                          size: 24.sp,
-                        ),
-                      );
-              }),
-              20.horizontalSpace,
-              Expanded(
-                child: EdwardbText(
-                  "License Photo",
-                  fontWeight: FontWeight.w400,
-                  fontSize: 18,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF10B981),
-                  borderRadius: BorderRadius.circular(8.r),
-                ),
-                child: EdwardbText(
-                  'Completed',
-                  color: Colors.white,
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // // License Photo Section
+        // Container(
+        //   padding: EdgeInsets.symmetric(horizontal: 30.w, vertical: 15.h),
+        //   decoration: BoxDecoration(
+        //     borderRadius: BorderRadius.circular(10.r),
+        //     border: Border.all(color: const Color(0xFFE5E7EB)),
+        //     color: Colors.white,
+        //   ),
+        //   child: Row(
+        //     children: [
+        //       Obx(() {
+        //         return controller.LICENSE_PHOTO.value != null
+        //             ? ClipRRect(
+        //                 borderRadius: BorderRadius.circular(8.r),
+        //                 child: Container(
+        //                   width: 80.w,
+        //                   height: 50.h,
+        //                   decoration: BoxDecoration(
+        //                     image: DecorationImage(
+        //                       image: FileImage(
+        //                         File(controller.LICENSE_PHOTO.value!),
+        //                       ),
+        //                       fit: BoxFit.cover,
+        //                     ),
+        //                   ),
+        //                 ),
+        //               )
+        //             : Container(
+        //                 width: 80.w,
+        //                 height: 50.h,
+        //                 decoration: BoxDecoration(
+        //                   borderRadius: BorderRadius.circular(8.r),
+        //                   color: const Color(0xFFF3F4F6),
+        //                   border: Border.all(color: const Color(0xFFE5E7EB)),
+        //                 ),
+        //                 child: Icon(
+        //                   Icons.card_membership_rounded,
+        //                   color: const Color(0xFF6B7280),
+        //                   size: 24.sp,
+        //                 ),
+        //               );
+        //       }),
+        //       20.horizontalSpace,
+        //       Expanded(
+        //         child: EdwardbText(
+        //           "License Photo",
+        //           fontWeight: FontWeight.w400,
+        //           fontSize: 18,
+        //         ),
+        //       ),
+        //       Container(
+        //         padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+        //         decoration: BoxDecoration(
+        //           color: const Color(0xFF10B981),
+        //           borderRadius: BorderRadius.circular(8.r),
+        //         ),
+        //         child: EdwardbText(
+        //           'Completed',
+        //           color: Colors.white,
+        //           fontWeight: FontWeight.w500,
+        //           fontSize: 14,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         20.verticalSpace,
 
         Container(

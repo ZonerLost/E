@@ -233,7 +233,7 @@ class _TermConditionState extends State<TermCondition> {
                   // SizedBox(height: 16.h),
                   
                   EdwardbText(
-                    'Enter inital signature using stylus or finger',
+                    'Enter Initials using Stylus or Finger',
                     fontWeight: FontWeight.w600,
                     fontSize: 20,
                     maxLines: 50,
@@ -412,40 +412,30 @@ class _TermConditionState extends State<TermCondition> {
                   ),
                   SizedBox(height: 30.h),
               
-                   GestureDetector(
+              GestureDetector(
                      onTap: () async {
-                       String date = await Utils.showDatePickerDialog(
+                       String date = await Utils.showMothPickerDialog(
                          context,
                        );
-                      if (date.isNotEmpty) {
-    // Split and keep only month/year
-    final parts = date.split('/'); // ['7', '10', '2025']
-    if (parts.length == 3) {
-      final formatted = "${parts[1]}/${parts[2]}"; // "10/2025"
-      controller.cardExpiry.text = formatted;
-    }
-  }
+                           controller.cardExpiry.text = date;
+
                      },
                      child: AbsorbPointer(
                        child: EdwardbTextField(
                          controller: controller.cardExpiry,
-                         hintText: 'Date',
+                         hintText: 'Card Expiry Date',
                          readOnly: true,
                          keyboardType: TextInputType.datetime,
                          validator: (value) {
                            if (value == null || value.isEmpty) {
                              return 'Please enter the date';
                            }
-                          
                            return null;
                          },
                        ),
                      ),
                    ),
-                     
-                      
                   SizedBox(height: 40.h),
-              
                   EdwardbText(
                     'Before continuing please confirm you understand the agreement',
                     fontWeight: FontWeight.w500,

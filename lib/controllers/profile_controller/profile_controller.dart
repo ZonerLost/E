@@ -3,10 +3,12 @@ import 'package:edwardb/config/routes/routes_names.dart';
 import 'package:edwardb/model/contract_model.dart';
 import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/firebase_service.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
   RxBool controllerIsBusy = false.obs;
+  RxBool isUpdating = false.obs;
 
   var totalContracts = 0.obs;
   var monthlyContracts = 0.obs;
@@ -80,6 +82,24 @@ class ProfileController extends GetxController {
       controllerIsBusy.value = false;
     }
   }
+
+
+  Future<void> completeContract(String contractId) async {
+    isUpdating.value = true;
+    try {
+      final updatedContract = await FirebaseService.instance.markContractAsComplete(contractId);
+
+  if (updatedContract != null) {
+    // Update your reactive variable or list
+    contractsList[contractsList.indexWhere((c) => c.contractId == contractId)] = updatedContract;
+    update();
+  }
+    } catch (e) {
+     Get.snackbar("Error", "Error Updating Status", backgroundColor: Colors.red);
+    } finally {
+      isUpdating.value = false;
+    }
+}
 
   // Method to refresh profile data
   Future<void> refreshProfile() async {

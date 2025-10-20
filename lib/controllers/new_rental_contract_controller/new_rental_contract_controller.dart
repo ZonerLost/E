@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:typed_data';
 
+import 'package:cloud_functions/cloud_functions.dart';
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/done_screen.dart';
 import 'package:edwardb/services/firebase_service.dart';
@@ -12,6 +13,9 @@ class NewRentalContractController extends GetxController {
   ///
   /// ===== NEW RENTAL CONTRACT ======
   ///
+  ///
+  FirebaseFunctions get _functions =>
+    FirebaseFunctions.instanceFor(region: 'us-central1');
   final isScreenBusy = false.obs;
   final email = TextEditingController();
   final firstName = TextEditingController();
@@ -98,12 +102,16 @@ class NewRentalContractController extends GetxController {
       return false;
     }
 
-    if (LICENSE_PHOTO.value == null) {
-      Utils.showErrorSnackbar('Error', 'Please take a license photo.');
-      return false;
-    }
+    // if (LICENSE_PHOTO.value == null) {
+    //   Utils.showErrorSnackbar('Error', 'Please take a license photo.');
+    //   return false;
+    // }
     return true;
   }
+
+
+  
+
 
 
   bool validateDriverLicensePhoto() {
@@ -139,7 +147,7 @@ class NewRentalContractController extends GetxController {
         date: date.text.trim(),
         licensePhotoCustomer: CUSTOMER_LICENSE_PHOTO.value!,
         driverPhotoPath: DRIVER_PHOTO.value!,
-        licensePhotoPath: LICENSE_PHOTO.value!,
+        // licensePhotoPath: LICENSE_PHOTO.value!,
         signatureBytes: signatureBytes!,
         // initalController: initialController.text.trim(),
         cardCvC: cvcNumber.text.trim(), 
@@ -150,7 +158,24 @@ class NewRentalContractController extends GetxController {
         signatureBytesInitals: signatureBytesInitial!
       );
 
-      if (contractId != null) {
+      await uploadContractToDrive(
+  username: '$firstName $lastName', 
+  contractData: {
+    'contractId': contractId,
+    'email': email,
+    'firstName': firstName,
+    'lastName': lastName,
+    'phoneNumber': phoneNumber,
+    'licenseNumber': licenseNumber.text.trim(),
+    'contractName': contractName.text.trim(),
+    'date': date,
+  },
+  driverPhotoUrl: DRIVER_PHOTO.value,
+  licensePhotoUrl: LICENSE_PHOTO.value,
+  signatureBytesInitals: signatureBytesInitial,
+);
+
+      if (contractId.isNotEmpty) {
         Utils.showErrorSnackbar('Success', 'Contract created successfully!');
         // _clearForm();
         isScreenBusy.value = false;
@@ -192,4 +217,29 @@ class NewRentalContractController extends GetxController {
     contractName.clear();
     licenseNumber.clear();
   }
+
+
+
+Future<void> uploadContractToDrive({
+  required String username,                
+  required Map<String, dynamic> contractData,
+  String? driverPhotoUrl,
+  String? licensePhotoUrl,
+  Uint8List? signatureBytesInitals,
+}) async {
+  final fn = _functions.httpsCallable(
+    'uploadContractToDrive',
+    options:  HttpsCallableOptions(timeout: Duration(minutes: 3)),
+  );
+  await fn.call({
+    'username': username,
+    'contractData': contractData,
+    if (driverPhotoUrl != null) 'driverPhotoUrl': driverPhotoUrl,
+    if (licensePhotoUrl != null) 'licensePhotoUrl': licensePhotoUrl,
+    if (signatureBytesInitals != null) 'signatureUrl': signatureBytesInitals,
+  });
+}
+
+
+
 }

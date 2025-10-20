@@ -1,4 +1,6 @@
 import 'package:edwardb/config/constant/colors.dart';
+import 'package:edwardb/config/utils/utils.dart';
+import 'package:edwardb/screens/custom/custom_dialog/custom_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -158,6 +160,25 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
                           // You might want to format the date for display here
                           startDate: contract.date ?? 'N/A',
                           status: contract.status ?? '',
+                          ontap:  ()async{
+                           if(contract.status == "complete"){
+      Utils.showErrorSnackbar('Error', 'Contract is Already Completed');
+
+                              } else {
+                          showCustomDialog(
+                            title: "Update Status!", 
+                            message: "Mark as Done?", 
+                            confirmText: "Complete",
+                            onConfirm: 
+                            ()async{
+                             
+                              await controller.completeContract(contract.contractId);
+                              
+                              // Get.back();
+                            },
+                          );  
+                              } 
+                          }
                         ),
                       );
                     },
@@ -266,46 +287,54 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
     required String refId,
     required String startDate,
     required String status,
+    required Function() ontap
+
   }) {
     // ... (This method is unchanged)
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: EdwardbText(name, fontWeight: FontWeight.w500, fontSize: 14, color: const Color(0xFF111827)),
-          ),
-          Expanded(
-            flex: 2,
-            child: EdwardbText(refId, fontWeight: FontWeight.w500, fontSize: 14, color: const Color(0xFF6B7280)),
-          ),
-          Expanded(
-            flex: 2,
-            child: EdwardbText(startDate, fontWeight: FontWeight.w500, fontSize: 14, color: const Color(0xFF111827)),
-          ),
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-              decoration: BoxDecoration(
-                color: status.toLowerCase() == 'active'
-                    ? const Color(0xFF10B981) // Green for active
-                    : status.toLowerCase() == 'due'
-                    ? const Color(0xFFDC2626) // Red for due
-                    : Colors.orange, // Orange for pending or other
-                borderRadius: BorderRadius.circular(16.r),
-              ),
-              child: Center(
-                child: EdwardbText(status.toUpperCase(), fontWeight: FontWeight.w500, fontSize: 12, color: Colors.white),
+    return GestureDetector(
+      onTap: ontap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10.r),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: EdwardbText(name, 
+              fontWeight: FontWeight.w500, fontSize: 14, color: const Color(0xFF111827)),
+            ),
+            Expanded(
+              flex: 2,
+              child: EdwardbText(refId, 
+              fontWeight: FontWeight.w500, 
+              fontSize: 14, color: const Color(0xFF6B7280)),
+            ),
+            Expanded(
+              flex: 2,
+              child: EdwardbText(startDate, 
+              fontWeight: FontWeight.w500, fontSize: 14, color: const Color(0xFF111827)),
+            ),
+            Expanded(
+              flex: 1,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                 color: status.toLowerCase() == 'active'
+                      ? const Color(0xFF10B981) : 
+                      status.toLowerCase() == "complete" ?  Colors.blue
+                      : const Color(0xFFDC2626), 
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: Center(
+                  child: EdwardbText(status.toUpperCase(), fontWeight: FontWeight.w500, fontSize: 12, color: Colors.white),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

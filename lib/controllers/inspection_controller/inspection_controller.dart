@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:edwardb/config/utils/utils.dart';
+import 'package:edwardb/controllers/profile_controller/profile_controller.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_confirm_screen.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_selected_screen.dart';
 import 'package:edwardb/services/firebase_service.dart';
@@ -14,6 +15,7 @@ import 'package:signature/signature.dart';
 import '../../screens/view/vehicle_inspection_screens/done_screen.dart';
 
 class InspectionController extends GetxController {
+  final ProfileController authController = Get.find();
   CameraController? cameraController;
   List<CameraDescription>? cameras;
 
@@ -205,6 +207,7 @@ class InspectionController extends GetxController {
 
       // Submit inspection
       final success = await FirebaseService.instance.submitInspection(
+        name: authController.profile.value.username,
         contractId: contractId,
         videoFilePath: videoPath.value,
         signatureBytes: signatureBytes!,

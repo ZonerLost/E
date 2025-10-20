@@ -12,7 +12,12 @@
           "package_name": "com.example.edwardb"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "355522851985-rfmka2e379dusisuqh6of9b619claiul.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyDRBz5tDCx1W7l_okgE7uznzitiUOX4bek"
@@ -20,7 +25,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "355522851985-rfmka2e379dusisuqh6of9b619claiul.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "355522851985-8qav83mrl2rbcgp7j9gsri37tmg899c7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.edwardb"
+              }
+            }
+          ]
         }
       }
     }
