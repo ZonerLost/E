@@ -178,6 +178,18 @@ class _TermConditionState extends State<TermCondition> {
                       backgroundColor: kWhiteColor,
                     ),
                   ),
+                  SizedBox(height: 10.h),
+
+                  Align( 
+                    alignment: Alignment.centerRight,
+                    child: EdwardbButton(
+                      width: 180,
+                      backgroundColor: Colors.white,
+                      border: BorderSide(color: Colors.grey.withValues(alpha: 0.5)),
+                      label: "Clear", textColor: Colors.black, onPressed: (){
+                        controller.clearSignatureOne();
+                    }),
+                  ),
                   SizedBox(height: 16.h),
                   EdwardbText(
                     '5. Further responsibility.',
@@ -250,6 +262,18 @@ class _TermConditionState extends State<TermCondition> {
                       height: 200.h,
                       backgroundColor: kWhiteColor,
                     ),
+                  ),
+                  SizedBox(height: 10.h),
+
+                   Align( 
+                    alignment: Alignment.centerRight,
+                    child: EdwardbButton(
+                      width: 180,
+                      backgroundColor: Colors.white,
+                      border: BorderSide(color: Colors.grey.withValues(alpha: 0.5)),
+                      label: "Clear", textColor: Colors.black, onPressed: (){
+                        controller.clearSignatureInitial();
+                    }),
                   ),
                   SizedBox(height: 16.h),
                   EdwardbText(
@@ -558,6 +582,18 @@ class _TermConditionState extends State<TermCondition> {
                       height: 200.h,
                       backgroundColor: kWhiteColor,
                     ),
+                  ),
+                   SizedBox(height: 10.h),
+
+                   Align( 
+                    alignment: Alignment.centerRight,
+                    child: EdwardbButton(
+                      width: 180,
+                      backgroundColor: Colors.white,
+                      border: BorderSide(color: Colors.grey.withValues(alpha: 0.5)),
+                      label: "Clear", textColor: Colors.black, onPressed: (){
+                        controller.clearSignatureCard();
+                    }),
                   ),
                         ],
                       ))

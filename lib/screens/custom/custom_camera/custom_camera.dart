@@ -8,14 +8,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
 
-
-
 class CameraScreen extends StatefulWidget {
   final bool useFrontCamera; // true = front, false = back
 
   const CameraScreen({super.key, required this.useFrontCamera});
 
   @override
+  // ignore: library_private_types_in_public_api
   _CameraScreenState createState() => _CameraScreenState();
 }
 
@@ -24,32 +23,71 @@ class _CameraScreenState extends State<CameraScreen> {
   CameraController? controller;
   bool isCameraReady = false;
   XFile? capturedFile;
+  late bool _isFrontCamera;
 
   @override
   void initState() {
     super.initState();
+    _isFrontCamera = widget.useFrontCamera;
     initCamera();
   }
 
   Future<void> initCamera() async {
     cameras = await availableCameras();
-    CameraDescription selectedCamera = cameras.firstWhere(
-      (camera) => widget.useFrontCamera
+    await _initializeSelectedCamera();
+  }
+
+  Future<void> _initializeSelectedCamera() async {
+    setState(() {
+      isCameraReady = false;
+      capturedFile = null;
+    });
+
+    final CameraDescription selectedCamera = cameras.firstWhere(
+      (camera) => _isFrontCamera
           ? camera.lensDirection == CameraLensDirection.front
           : camera.lensDirection == CameraLensDirection.back,
       orElse: () => cameras.first,
     );
 
-    controller = CameraController(
+    final previousController = controller;
+    if (previousController != null) {
+      await previousController.dispose();
+    }
+
+    final CameraController newController = CameraController(
       selectedCamera,
       ResolutionPreset.max, // maximize quality
     );
 
-    await controller!.initialize();
-    if (!mounted) return;
+    controller = newController;
+
+    try {
+      await newController.initialize();
+      if (!mounted) return;
+
+      setState(() {
+        isCameraReady = true;
+      });
+    } catch (e) {
+      await newController.dispose();
+      controller = null;
+      if (!mounted) return;
+      setState(() {
+        isCameraReady = false;
+      });
+      print('Error initializing camera: $e');
+    }
+  }
+
+  Future<void> _switchCamera() async {
+    if (cameras.length < 2) return;
+
     setState(() {
-      isCameraReady = true;
+      _isFrontCamera = !_isFrontCamera;
     });
+
+    await _initializeSelectedCamera();
   }
 
   @override
@@ -57,46 +95,51 @@ class _CameraScreenState extends State<CameraScreen> {
     controller?.dispose();
     super.dispose();
   }
-Future<void> takePicture() async {
-  if (!controller!.value.isInitialized) return;
-  try {
-    final file = await controller!.takePicture();
 
-    // Load image using 'image' package
-    final bytes = await File(file.path).readAsBytes();
-    img.Image? original = img.decodeImage(bytes);
+  Future<void> takePicture() async {
+    final currentController = controller;
+    if (currentController == null || !currentController.value.isInitialized)
+      return;
+    try {
+      final file = await currentController.takePicture();
 
-    if (original != null) {
-      int cropWidth, cropHeight, cropX, cropY;
+      // Load image using 'image' package
+      final bytes = await File(file.path).readAsBytes();
+      img.Image? original = img.decodeImage(bytes);
 
-      if (widget.useFrontCamera) {
-        // Circle crop -> we'll crop a square around the circle
-        cropWidth = (original.width * 0.6).toInt(); // match your overlay radius
-        cropHeight = cropWidth;
-        cropX = (original.width - cropWidth) ~/ 2;
-        cropY = (original.height - cropHeight) ~/ 2;
-      } else {
-        // Rectangle crop -> match your overlay rectangle
-        cropWidth = (original.width * 0.9).toInt();
-        cropHeight = (original.height * 0.4).toInt();
-        cropX = (original.width - cropWidth) ~/ 2;
-        cropY = (original.height - cropHeight) ~/ 2;
+      if (original != null) {
+        int cropWidth, cropHeight, cropX, cropY;
+
+        if (_isFrontCamera) {
+          // Circle crop -> we'll crop a square around the circle
+          cropWidth =
+              (original.width * 0.6).toInt(); // match your overlay radius
+          cropHeight = cropWidth;
+          cropX = (original.width - cropWidth) ~/ 2;
+          cropY = (original.height - cropHeight) ~/ 2;
+        } else {
+          // Rectangle crop -> match your overlay rectangle
+          cropWidth = (original.width * 0.9).toInt();
+          cropHeight = (original.height * 0.4).toInt();
+          cropX = (original.width - cropWidth) ~/ 2;
+          cropY = (original.height - cropHeight) ~/ 2;
+        }
+
+        img.Image cropped = img.copyCrop(original,
+            x: cropX, y: cropY, width: cropWidth, height: cropHeight);
+
+        // Save the cropped image
+        final croppedFile = File(file.path)
+          ..writeAsBytesSync(img.encodeJpg(cropped));
+
+        setState(() {
+          capturedFile = XFile(croppedFile.path);
+        });
       }
-
-      img.Image cropped = img.copyCrop(original, x:  cropX, y:  cropY, width:  cropWidth, height:  cropHeight);
-
-      // Save the cropped image
-      final croppedFile = File(file.path)..writeAsBytesSync(img.encodeJpg(cropped));
-
-      setState(() {
-        capturedFile = XFile(croppedFile.path);
-      });
+    } catch (e) {
+      print(e);
     }
-
-  } catch (e) {
-    print(e);
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -107,94 +150,85 @@ Future<void> takePicture() async {
       return Scaffold(
         backgroundColor: Colors.white,
         body: SizedBox(
-          height: context.screenHeight ,
+          height: context.screenHeight,
           width: context.screenWidth,
-
-
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-                if(!widget.useFrontCamera)
-               Padding(
-                 padding: const EdgeInsets.all(12.0),
-                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                   child: SizedBox(
-                    height: context.screenHeight * 0.4 - 30,
-                    width: context.screenWidth,
-                     child: Image.file(
+              if (!_isFrontCamera)
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: SizedBox(
+                      height: context.screenHeight * 0.4 - 30,
+                      width: context.screenWidth,
+                      child: Image.file(
                         File(capturedFile!.path),
                         fit: BoxFit.fill,
-                      
-                                   ),
-                   ),
-                 ),
-               ) else 
-               Padding(
-                 padding: const EdgeInsets.all(12.0),
-                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                   child: Container(
-                    height: context.screenHeight * 0.6,
-                    width: context.screenWidth,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle
+                      ),
                     ),
-                     child: Image.file(
+                  ),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(15),
+                    child: Container(
+                      height: context.screenHeight * 0.6,
+                      width: context.screenWidth,
+                      decoration: BoxDecoration(shape: BoxShape.circle),
+                      child: Image.file(
                         File(capturedFile!.path),
                         fit: BoxFit.fill,
-                      
-                                   ),
-                   ),
-                 ),
-               ),
-                30.verticalSpace,
-
-                EdwardbText( widget.useFrontCamera ?  "Confirm Driver Photo" : "Confirm License Photo", fontWeight: FontWeight.bold,
-                fontSize: 30,
+                      ),
+                    ),
+                  ),
                 ),
-
-                30.verticalSpace,
-
+              30.verticalSpace,
+              EdwardbText(
+                _isFrontCamera
+                    ? "Confirm Driver Photo"
+                    : "Confirm License Photo",
+                fontWeight: FontWeight.bold,
+                fontSize: 30,
+              ),
+              30.verticalSpace,
               Row(
                 spacing: 10,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   GestureDetector(
-                    onTap: (){
-            
-                        setState(() {
-                          capturedFile = null;
-                        });
-                      
+                    onTap: () {
+                      setState(() {
+                        capturedFile = null;
+                      });
                     },
                     child: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: kPrimaryColor, 
-                              shape: BoxShape.circle
-                          ),
-                        child: Icon(Icons.refresh, color: Colors.white,),
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                          color: kPrimaryColor, shape: BoxShape.circle),
+                      child: Icon(
+                        Icons.refresh,
+                        color: Colors.white,
                       ),
+                    ),
                   ),
-
-                    GestureDetector(
-                    onTap: (){
-            
-                        Get.back(result: capturedFile!.path); 
-                      
+                  GestureDetector(
+                    onTap: () {
+                      Get.back(result: capturedFile!.path);
                     },
                     child: Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: Colors.green, 
-                              shape: BoxShape.circle
-                          ),
-                        child: Icon(Icons.check, color: Colors.white,),
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                          color: Colors.green, shape: BoxShape.circle),
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
                       ),
+                    ),
                   ),
-                  
-                 
                 ],
               ),
             ],
@@ -209,7 +243,9 @@ Future<void> takePicture() async {
         children: [
           Expanded(
             child: SizedBox(
-              height: widget.useFrontCamera ? context.screenHeight * 0.7 : context.screenHeight,
+              height: _isFrontCamera
+                  ? context.screenHeight * 0.7
+                  : context.screenHeight,
               width: context.screenWidth,
               child: Stack(
                 children: [
@@ -219,29 +255,46 @@ Future<void> takePicture() async {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: CustomPaint(
-                        painter: OverlayPainter(isFront: widget.useFrontCamera),
+                        painter: OverlayPainter(isFront: _isFrontCamera),
                       ),
                     ),
                   ),
-                  
+                  if (cameras.length > 1)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: SafeArea(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.cameraswitch,
+                                color: Colors.white),
+                            onPressed: isCameraReady ? _switchCamera : null,
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
           ),
-         Container(
-          color: Colors.black,
-          height: context.screenHeight * 0.2,
-          child: Center(
-            child: GestureDetector(
-              onTap: (){
-                takePicture();
-              },
-              child: Image.asset("assets/images/camera_icon.png", 
-              height: 80,
-              width: 80,
-              ),
-            )))
-          
+          Container(
+              color: Colors.black,
+              height: context.screenHeight * 0.2,
+              child: Center(
+                  child: GestureDetector(
+                onTap: () {
+                  takePicture();
+                },
+                child: Image.asset(
+                  "assets/images/camera_icon.png",
+                  height: 80,
+                  width: 80,
+                ),
+              )))
         ],
       ),
     );
@@ -259,7 +312,8 @@ class OverlayPainter extends CustomPainter {
       ..color = Colors.grey.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;
 
-    Path background = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    Path background = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
     Path cutout;
     if (isFront) {

@@ -40,9 +40,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(appBar: _appBar(), body: _body(), 
     floatingActionButton: FloatingActionButton(onPressed: ()async{
-      // profile.logOut();
+      profile.logOut();
       // await FirebaseAuth.instance.signInAnonymously();
-     await DriveDummyUploader.runAll();
+    //  await DriveDummyUploader.runAll();
 
       
       // final harness = DriveTestHarness(region: 'us-central1');

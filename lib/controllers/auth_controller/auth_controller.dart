@@ -25,6 +25,9 @@ class AuthController extends GetxController implements AuthRepository {
         passwordController.text.trim(),
         rememberMe.value,
       );
+
+    
+
     } catch (e) {
       log(e.toString());
       Get.snackbar('Error', e.toString());

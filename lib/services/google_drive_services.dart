@@ -1,155 +1,136 @@
-import 'dart:io';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'dart:io';
+
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:mime/mime.dart';
 
+/// Google Drive upload helper that supports:
+/// - Regular "My Drive" folders
+/// - Shared Drive **root** or sub-folders (with proper corpora/driveId handling)
+///
+///  • Any Uint8List blobs (e.g., signatures) as PNGs
+///  • Any local files (photos/videos) by path
 class GoogleDriveService {
-  static const _scopes = [drive.DriveApi.driveFileScope];
+  // Drive scopes needed for uploading/creating files & folders
+  static const List<String> _driveScopes = <String>[
+    drive.DriveApi.driveScope,      // full Drive incl. shared drives
+    drive.DriveApi.driveFileScope,  // read/write files created by the app
+  ];
 
-  // --- keep your exact sign-in flow ---
-  static Future<drive.DriveApi> getDriveClient() async {
-    final googleSignIn = GoogleSignIn.instance;
-    await googleSignIn.initialize();
-
-    GoogleSignInAccount? acct = await googleSignIn.attemptLightweightAuthentication();
-    acct ??= await googleSignIn.authenticate();
-    if (acct == null) {
-      throw Exception('User cancelled Google Sign-In');
-    }
-
-    final auth = await googleSignIn.authorizationClient?.authorizeScopes(_scopes);
-    if (auth == null) {
-      throw Exception('Failed to authorize scopes');
-    }
-
-    final token = auth.accessToken;
-    if (token == null) {
-      throw Exception('Access token is null');
-    }
-
-    final client = _AuthClient(token);
-    return drive.DriveApi(client);
-  }
-
-  // --- your original simple uploader (unchanged) ---
-  static Future<String> uploadFile({
-    required File file,
-    String? folderId,
+  /// Build an authenticated Drive client using the **v7** google_sign_in flow.
+  static Future<drive.DriveApi> _getDriveClient({
+    String? clientId,
+    String? serverClientId,
   }) async {
-    final api = await getDriveClient();
+    final signIn = GoogleSignIn.instance;
 
-    final metadata = drive.File()
-      ..name = file.uri.pathSegments.last
-      ..parents = folderId != null ? [folderId] : null;
+    await signIn.initialize(clientId: clientId, serverClientId: serverClientId);
 
-    final media = drive.Media(file.openRead(), await file.length());
+    GoogleSignInAccount? user;
+    try {
+      user = await signIn.attemptLightweightAuthentication();
+    } catch (_) {
+      // ignore; we'll fall back to interactive auth
+    }
 
-    final result = await api.files.create(
-      metadata,
-      uploadMedia: media,
-      $fields: 'id, webViewLink',
-      supportsAllDrives: true,
-    );
+    user ??= await signIn.authenticate();
 
-    return result.webViewLink ?? '';
+    final authClient = user.authorizationClient;
+    var authorization = await authClient.authorizationForScopes(_driveScopes);
+    authorization ??= await authClient.authorizeScopes(_driveScopes);
+
+    final accessToken = authorization.accessToken; // v7 way to get access token
+    return drive.DriveApi(_AuthClient(accessToken));
   }
 
-  // ---------------------------------------------------------------------------
-  // NEW: Upload a whole bundle into a SHARED DRIVE:
-  //   <SharedDriveRoot>/<parentFolderName>/<username>/<contractId>/
-  // Uploads:
-  //   • JSON snapshot of contractData  ( "<username> - <contractId>.json" )
-  //   • Multiple images from local paths and/or raw bytes (prefixed with username)
-  // ---------------------------------------------------------------------------
-  static Future<DriveBundleResult> uploadContractBundleToSharedDrive({
-    required String sharedDriveId,                // the Shared Drive *Drive ID*
-    required String username,                     // used for folder + filename prefix
-    required String contractId,                   // subfolder under username
-    required Map<String, dynamic> contractData,   // serialized to JSON
-    String parentFolderName = 'Contracts',        // top folder in the drive
-    Map<String, String>? imageFilePaths,          // label -> local file path
-    Map<String, Uint8List>? imageBytes,           // label -> bytes
+  /// Public entry: Upload a "bundle" under a **known folder URL/ID** (My Drive or Shared Drive).
+  static Future<DriveBundleResult> uploadContractBundleToFolderLink({
+    required String parentFolderLinkOrId, // URL like https://drive.../folders/<ID> or just the ID
+    String topFolderName = 'EdWard',
+    required String username,
+    required String contractId,
+    required Map<String, dynamic> contractData,
+    Map<String, String>? imageFilePaths,  // label -> local file path
+    Map<String, Uint8List>? imageBytes,   // label -> bytes
     bool anyoneCanView = false,
+    String? clientId,
+    String? serverClientId,
   }) async {
-    final api = await getDriveClient();
-
-    // 1) /<parentFolderName> at shared drive root
-    final parentId = await _ensureFolderInSharedDrive(
-      api: api,
-      sharedDriveId: sharedDriveId,
-      name: parentFolderName,
-      parentId: null,
+    final api = await _getDriveClient(
+      clientId: clientId,
+      serverClientId: serverClientId,
     );
 
-    // 2) /<parentFolderName>/<username>
-    final userFolderId = await _ensureFolderInSharedDrive(
+    // Resolve whether the input is a Shared Drive root or a folder id in Drive
+    final resolved = await _resolveParentContext(api: api, urlOrId: parentFolderLinkOrId);
+    final parentId = resolved.parentId;
+    final driveId = resolved.driveId; // may be null for "My Drive"
+
+    // Ensure EdWard/<username>/<contractId>
+    final rootId = await _ensureFolderUnderParent(
       api: api,
-      sharedDriveId: sharedDriveId,
-      name: username.trim(),
+      name: topFolderName,
       parentId: parentId,
+      driveId: driveId,
     );
-
-    // 3) /<parentFolderName>/<username>/<contractId>
-    final contractFolderId = await _ensureFolderInSharedDrive(
+    final userFolderId = await _ensureFolderUnderParent(
       api: api,
-      sharedDriveId: sharedDriveId,
+      name: username.trim(),
+      parentId: rootId,
+      driveId: driveId,
+    );
+    final contractFolderId = await _ensureFolderUnderParent(
+      api: api,
       name: contractId,
       parentId: userFolderId,
+      driveId: driveId,
     );
 
     final uploaded = <DriveUploadResult>[];
 
-    // 4) JSON snapshot
+    // JSON snapshot
     final jsonName = _safe('$username - $contractId.json');
     final jsonBytes = Uint8List.fromList(utf8.encode(jsonEncode(contractData)));
-    uploaded.add(
-      await _uploadBytesToFolder(
-        api: api,
-        parentId: contractFolderId,
-        bytes: jsonBytes,
-        filename: jsonName,
-        mimeType: 'application/json',
-        anyoneCanView: anyoneCanView,
-      ),
-    );
+    uploaded.add(await _uploadBytesToFolder(
+      api: api,
+      parentId: contractFolderId,
+      bytes: jsonBytes,
+      filename: jsonName,
+      mimeType: 'application/json',
+      anyoneCanView: anyoneCanView,
+    ));
 
-    // 5) image bytes
-    if (imageBytes != null && imageBytes.isNotEmpty) {
+    // Raw byte files (e.g., signatures)
+    if (imageBytes != null) {
       for (final e in imageBytes.entries) {
-        final label = _safe(e.key);
-        final filename = _safe('$username - $label.png');
-        uploaded.add(
-          await _uploadBytesToFolder(
-            api: api,
-            parentId: contractFolderId,
-            bytes: e.value,
-            filename: filename,
-            mimeType: lookupMimeType(filename) ?? 'application/octet-stream',
-            anyoneCanView: anyoneCanView,
-          ),
-        );
+        final filename = _safe('$username - ${e.key}.png');
+        uploaded.add(await _uploadBytesToFolder(
+          api: api,
+          parentId: contractFolderId,
+          bytes: e.value,
+          filename: filename,
+          mimeType: lookupMimeType(filename) ?? 'application/octet-stream',
+          anyoneCanView: anyoneCanView,
+        ));
       }
     }
 
-    // 6) image files (local paths)
-    if (imageFilePaths != null && imageFilePaths.isNotEmpty) {
+    // Local files by path (e.g., photos/videos)
+    if (imageFilePaths != null) {
       for (final e in imageFilePaths.entries) {
-        final label = _safe(e.key);
         final path = e.value;
         final ext = path.split('.').last.toLowerCase();
-        final filename = _safe('$username - $label.$ext');
-        uploaded.add(
-          await _uploadFileToFolder(
-            api: api,
-            parentId: contractFolderId,
-            file: File(path),
-            filenameOverride: filename,
-            anyoneCanView: anyoneCanView,
-          ),
-        );
+        final filename = _safe('$username - ${e.key}.$ext');
+        uploaded.add(await _uploadFileToFolder(
+          api: api,
+          parentId: contractFolderId,
+          file: File(path),
+          filenameOverride: filename,
+          anyoneCanView: anyoneCanView,
+        ));
       }
     }
 
@@ -160,43 +141,96 @@ class GoogleDriveService {
     );
   }
 
-  // ---------- helpers ----------
-  static Future<String> _ensureFolderInSharedDrive({
-    required drive.DriveApi api,
-    required String sharedDriveId,
-    required String name,
-    String? parentId,
-  }) async {
-    final escaped = _escape(name);
-    final parentFilter = parentId != null ? " and '$parentId' in parents" : "";
-    final q = "mimeType = 'application/vnd.google-apps.folder' "
-        "and name = '$escaped' and trashed = false$parentFilter";
+  // --------------------------- helpers ---------------------------
 
-    final list = await api.files.list(
-      corpora: 'drive',
-      driveId: sharedDriveId,
+  /// Accepts a URL/ID that could be:
+  ///  • Shared Drive root ID  → parent = that root id, driveId = same id
+  ///  • Folder ID (My Drive or Shared Drive) → parent = folder id, driveId resolved if belongs to a Shared Drive
+  static Future<({String parentId, String? driveId})> _resolveParentContext({
+    required drive.DriveApi api,
+    required String urlOrId,
+  }) async {
+    final id = _extractDriveIdFromUrl(urlOrId)
+        ?? (throw Exception('Bad Drive link/id: $urlOrId'));
+
+    // Try Shared Drive first
+    try {
+      final drive.Drive drv = await api.drives.get(id) as drive.Drive;
+      if (drv.id != null && drv.id!.isNotEmpty) {
+        // For Shared Drives, the drive's root folder id equals the drive id.
+        return (parentId: drv.id!, driveId: drv.id!);
+      }
+    } catch (_) {
+      // Not a Shared Drive id; continue as folder-id flow.
+    }
+
+    // Otherwise treat as a folder id (My Drive or inside a Shared Drive)
+    final drive.File f = await api.files.get(
+      id,
+      supportsAllDrives: true,
+      $fields: 'id,mimeType,driveId',
+    ) as drive.File;
+
+    final mime = f.mimeType ?? '';
+    if (mime != 'application/vnd.google-apps.folder') {
+      throw Exception('Provided ID is not a folder (mimeType=$mime).');
+    }
+    return (parentId: f.id!, driveId: f.driveId);
+  }
+
+  static String? _extractDriveIdFromUrl(String urlOrId) {
+    if (!urlOrId.contains('/')) return urlOrId.trim();
+    final patterns = <RegExp>[
+      RegExp(r'/folders/([a-zA-Z0-9_-]+)'),
+      RegExp(r'/file/d/([a-zA-Z0-9_-]+)'),
+      RegExp(r'[?&]id=([a-zA-Z0-9_-]+)'),
+    ];
+    for (final p in patterns) {
+      final m = p.firstMatch(urlOrId);
+      if (m != null) return m.group(1);
+    }
+    return null;
+  }
+
+  /// Creates (if needed) a folder named [name] under [parentId].
+  /// If [driveId] is provided, we constrain list queries to that Shared Drive.
+  static Future<String> _ensureFolderUnderParent({
+    required drive.DriveApi api,
+    required String name,
+    required String parentId,
+    String? driveId, // <-- Shared Drive id when available
+  }) async {
+    final q =
+        "mimeType = 'application/vnd.google-apps.folder' "
+        "and name = '${_escape(name)}' and trashed = false "
+        "and '$parentId' in parents";
+
+    final drive.FileList list = await api.files.list(
+      corpora: driveId != null ? 'drive' : 'user',
+      driveId: driveId,
       includeItemsFromAllDrives: true,
       supportsAllDrives: true,
+      spaces: 'drive',
       q: q,
       $fields: 'files(id,name)',
       pageSize: 1,
-      spaces: 'drive',
     );
 
     if (list.files != null && list.files!.isNotEmpty) {
       return list.files!.first.id!;
     }
 
-    final meta = drive.File()
+    final fileMeta = drive.File()
       ..name = name
       ..mimeType = 'application/vnd.google-apps.folder'
-      ..parents = parentId != null ? [parentId] : null;
+      ..parents = [parentId];
 
-    final created = await api.files.create(
-      meta,
+    final drive.File created = await api.files.create(
+      fileMeta,
       supportsAllDrives: true,
       $fields: 'id',
-    );
+    ) as drive.File;
+
     return created.id!;
   }
 
@@ -207,7 +241,9 @@ class GoogleDriveService {
     required String filenameOverride,
     bool anyoneCanView = false,
   }) async {
-    final mime = lookupMimeType(filenameOverride) ?? lookupMimeType(file.path) ?? 'application/octet-stream';
+    final mime = lookupMimeType(filenameOverride) ??
+        lookupMimeType(file.path) ??
+        'application/octet-stream';
 
     final meta = drive.File()
       ..name = filenameOverride
@@ -216,28 +252,32 @@ class GoogleDriveService {
 
     final media = drive.Media(file.openRead(), await file.length());
 
-    final created = await api.files.create(
+    final drive.File created = await api.files.create(
       meta,
       uploadMedia: media,
       supportsAllDrives: true,
       $fields: 'id,name,webViewLink,parents',
-    );
+    ) as drive.File;
 
     if (anyoneCanView) {
-      await api.permissions.create(
-        drive.Permission()
-          ..type = 'anyone'
-          ..role = 'reader',
-        created.id!,
-        supportsAllDrives: true,
-      );
+      try {
+        await api.permissions.create(
+          drive.Permission()
+            ..type = 'anyone'
+            ..role = 'reader',
+          created.id!,
+          supportsAllDrives: true,
+        );
+      } catch (_) {
+        // Org policies on Shared Drives may block link-sharing; ignore gracefully.
+      }
     }
 
     return DriveUploadResult(
       id: created.id!,
       name: created.name ?? filenameOverride,
       webViewLink: created.webViewLink ?? '',
-      parentIds: (created.parents ?? const <String>[]),
+      parentIds: created.parents ?? const <String>[],
     );
   }
 
@@ -258,36 +298,42 @@ class GoogleDriveService {
 
     final media = drive.Media(Stream<List<int>>.value(bytes), bytes.length);
 
-    final created = await api.files.create(
+    final drive.File created = await api.files.create(
       meta,
       uploadMedia: media,
       supportsAllDrives: true,
       $fields: 'id,name,webViewLink,parents',
-    );
+    ) as drive.File;
 
     if (anyoneCanView) {
-      await api.permissions.create(
-        drive.Permission()
-          ..type = 'anyone'
-          ..role = 'reader',
-        created.id!,
-        supportsAllDrives: true,
-      );
+      try {
+        await api.permissions.create(
+          drive.Permission()
+            ..type = 'anyone'
+            ..role = 'reader',
+          created.id!,
+          supportsAllDrives: true,
+        );
+      } catch (_) {
+        // Org policies on Shared Drives may block link-sharing; ignore gracefully.
+      }
     }
 
     return DriveUploadResult(
       id: created.id!,
       name: created.name ?? filename,
       webViewLink: created.webViewLink ?? '',
-      parentIds: (created.parents ?? const <String>[]),
+      parentIds: created.parents ?? const <String>[],
     );
   }
 
   static String _escape(String s) => s.replaceAll("'", r"\'");
-  static String _safe(String s) => s.replaceAll(RegExp(r'[\\/|:*?"<>]'), '-').trim();
+  static String _safe(String s) =>
+      s.replaceAll(RegExp(r'[\\/|:*?"<>]'), '-').trim();
 }
 
-// simple result types
+// --------------------------- Result types ---------------------------
+
 class DriveBundleResult {
   final String userFolderId;
   final String contractFolderId;
@@ -312,11 +358,13 @@ class DriveUploadResult {
   });
 }
 
+// --------------------------- Auth wrapper ---------------------------
+
+/// Auth wrapper that injects the OAuth2 Bearer token into each HTTP request.
 class _AuthClient extends http.BaseClient {
   final String _token;
   final http.Client _inner = http.Client();
   _AuthClient(this._token);
-
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     request.headers['Authorization'] = 'Bearer $_token';

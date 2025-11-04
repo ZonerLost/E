@@ -1,7 +1,6 @@
 import 'package:edwardb/config/assets/assets.dart';
 import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
-import 'package:edwardb/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -100,7 +99,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         await controller.signIn();
-
                       }
                     },
                   );

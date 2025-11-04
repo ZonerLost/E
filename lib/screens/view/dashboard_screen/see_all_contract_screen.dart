@@ -24,13 +24,12 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
 
 
   // STEP 1: Add state for the sort/filter dropdown
-  String _selectedSortOption = 'Date (Latest)';
+  String _selectedSortOption = 'Status Active';
   final List<String> _sortOptions = const [
-    'Date (Latest)',
-    'Date (Oldest)',
+    // 'Date (Latest)',
+    // 'Date (Oldest)',
     'Status Active',
-    'Status Pending',
-    'Status Due',
+    'Status Complete',
   ];
 
   @override
@@ -39,20 +38,6 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
     super.dispose();
   }
 
-  // Helper function to safely parse date strings for sorting
-  DateTime _parseDate(String? dateStr) {
-    if (dateStr == null || dateStr.isEmpty) {
-      // Return a very old date for null/empty dates to place them at the end
-      return DateTime(1900);
-    }
-    try {
-      return DateTime.parse(dateStr);
-    } catch (e) {
-      // Handle parsing errors if the format is unexpected
-      print('Error parsing date: $e');
-      return DateTime(1900);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -118,20 +103,20 @@ class _SeeAllContractScreenState extends State<SeeAllContractScreen> {
 
                   // 3b. Apply dropdown sort/filter
                   switch (_selectedSortOption) {
-                    case 'Date (Latest)':
-                      processedList.sort((a, b) => _parseDate(b.date).compareTo(_parseDate(a.date)));
-                      break;
-                    case 'Date (Oldest)':
-                      processedList.sort((a, b) => _parseDate(a.date).compareTo(_parseDate(b.date)));
-                      break;
+                    // case 'Date (Latest)':
+                    //   processedList.sort((a, b) => _parseDate(b.date).compareTo(_parseDate(a.date)));
+                    //   break;
+                    // case 'Date (Oldest)':
+                    //   processedList.sort((a, b) => _parseDate(a.date).compareTo(_parseDate(b.date)));
+                    //   break;
                     case 'Status Active':
-                      processedList = processedList.where((c) => c.status?.toLowerCase() == 'active').toList();
+                      processedList = processedList.where((c) => c.status.toLowerCase() == 'active').toList();
                       break;
-                    case 'Status Pending':
-                      processedList = processedList.where((c) => c.status?.toLowerCase() == 'pending').toList();
-                      break;
-                    case 'Status Due':
-                      processedList = processedList.where((c) => c.status?.toLowerCase() == 'due').toList();
+                    case 'Status Complete':
+                      processedList = processedList.where((c) => c.status.toLowerCase() == 'complete').toList();
+                    //   break;
+                    // case 'Status Due':
+                    //   processedList = processedList.where((c) => c.status?.toLowerCase() == 'due').toList();
                       break;
                   }
 

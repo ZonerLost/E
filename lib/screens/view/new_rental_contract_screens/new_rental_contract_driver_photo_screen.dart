@@ -109,7 +109,7 @@ class _NewRentalContractDriverPhotoScreenState
                               child: EdwardbButton(
                                 label: 'Take Photo',
                                 onPressed: () async {
-                                    var g =  await Get.to(CameraScreen(useFrontCamera: true));
+                                    var g =  await Get.to(() => CameraScreen(useFrontCamera: true));
                                  if(g != null){
                                   controller.DRIVER_PHOTO.value = g;
                                  

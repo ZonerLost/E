@@ -1,7 +1,5 @@
 import 'dart:developer';
 import 'dart:typed_data';
-
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/done_screen.dart';
 import 'package:edwardb/services/firebase_service.dart';
@@ -14,8 +12,6 @@ class NewRentalContractController extends GetxController {
   /// ===== NEW RENTAL CONTRACT ======
   ///
   ///
-  FirebaseFunctions get _functions =>
-    FirebaseFunctions.instanceFor(region: 'us-central1');
   final isScreenBusy = false.obs;
   final email = TextEditingController();
   final firstName = TextEditingController();
@@ -74,6 +70,18 @@ class NewRentalContractController extends GetxController {
     } catch (e) {
       log('Error picking image: $e');
     }
+  }
+
+  clearSignatureOne(){
+    signatureControllerName.clear();
+  }
+
+  clearSignatureInitial(){
+    signatureControllerInital.clear();
+  }
+  
+  clearSignatureCard(){
+    signatureControllerCard.clear();
   }
 
   Future<void> pickLicensePhoto() async {
@@ -158,22 +166,7 @@ class NewRentalContractController extends GetxController {
         signatureBytesInitals: signatureBytesInitial!
       );
 
-      await uploadContractToDrive(
-  username: '$firstName $lastName', 
-  contractData: {
-    'contractId': contractId,
-    'email': email,
-    'firstName': firstName,
-    'lastName': lastName,
-    'phoneNumber': phoneNumber,
-    'licenseNumber': licenseNumber.text.trim(),
-    'contractName': contractName.text.trim(),
-    'date': date,
-  },
-  driverPhotoUrl: DRIVER_PHOTO.value,
-  licensePhotoUrl: LICENSE_PHOTO.value,
-  signatureBytesInitals: signatureBytesInitial,
-);
+     
 
       if (contractId.isNotEmpty) {
         Utils.showErrorSnackbar('Success', 'Contract created successfully!');
@@ -219,26 +212,6 @@ class NewRentalContractController extends GetxController {
   }
 
 
-
-Future<void> uploadContractToDrive({
-  required String username,                
-  required Map<String, dynamic> contractData,
-  String? driverPhotoUrl,
-  String? licensePhotoUrl,
-  Uint8List? signatureBytesInitals,
-}) async {
-  final fn = _functions.httpsCallable(
-    'uploadContractToDrive',
-    options:  HttpsCallableOptions(timeout: Duration(minutes: 3)),
-  );
-  await fn.call({
-    'username': username,
-    'contractData': contractData,
-    if (driverPhotoUrl != null) 'driverPhotoUrl': driverPhotoUrl,
-    if (licensePhotoUrl != null) 'licensePhotoUrl': licensePhotoUrl,
-    if (signatureBytesInitals != null) 'signatureUrl': signatureBytesInitals,
-  });
-}
 
 
 

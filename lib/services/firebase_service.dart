@@ -7,11 +7,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edwardb/model/contract_model.dart';
 import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/google_drive_services.dart';
+import 'package:edwardb/services/local_data_storage_service.dart';
 import 'package:edwardb/services/share_pref_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 import '../config/routes/routes_names.dart';
 
@@ -25,7 +25,27 @@ class FirebaseService {
   FirebaseStorage get _storage => FirebaseStorage.instance;
   FirebaseAuth get _auth => FirebaseAuth.instance;
 
+
+  Map<String, dynamic> _sanitizeForJson(Map<String, dynamic> data) {
+  final sanitized = <String, dynamic>{};
+  data.forEach((key, value) {
+    if (value is Map<String, dynamic>) {
+      sanitized[key] = _sanitizeForJson(value);
+    } else if (value is List) {
+      sanitized[key] = value.map((v) => v is Map<String, dynamic> ? _sanitizeForJson(v) : v).toList();
+    } else if (value is FieldValue) {
+      // Replace Firestore FieldValues with readable strings or timestamps
+      sanitized[key] = '[FieldValue.${value.toString()}]';
+    } else {
+      sanitized[key] = value;
+    }
+  });
+  return sanitized;
+}
+
+
    Future<void> signIn(String email, String password, bool remember) async {
+    
     try {
       final UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -41,13 +61,15 @@ class FirebaseService {
       if (!userDoc.exists) {
         throw Exception("User profile not found in Firestore");
       }
-     
+
       // Save user ID locally if remember me is checked
       if (remember) {
         await SharePrefService.instance.addUserId(user.uid);
       } 
-      
+     
+
       Get.offAllNamed(RouteName.dashboardScreen);
+   
     } on FirebaseAuthException catch (e) {
 
       if (e.code == 'user-not-found') {
@@ -236,25 +258,44 @@ class FirebaseService {
       log.log('Contract Data: $contractData');
 
       await contractRef.set(contractData);
-      await GoogleDriveService.uploadContractBundleToSharedDrive(
-  sharedDriveId: "13Epy1TxTK3gRvKXLXc6IbNspYu05mRJ2",
-  username: "$firstName $lastName",
+//       final snapshot = await contractRef.get();
+// final resolvedData = snapshot.data()!;
+
+await LocalArchiveService.instance.saveContractBundle(
+  topFolderName: 'xplore contracts',
+  username: '$firstName $lastName',
   contractId: contractId,
-  contractData: contractData,
-  parentFolderName: 'Contracts', // optional parent in the drive
+  contractData: _sanitizeForJson(contractData), 
   imageFilePaths: {
     if (driverPhotoPath.isNotEmpty) 'driverPhoto': driverPhotoPath,
     if (licensePhotoCustomer.isNotEmpty) 'customerLicensePhoto': licensePhotoCustomer,
-    // if you also captured a separate license photo path:
-    // 'licensePhoto': licensePhotoPath,
   },
   imageBytes: {
     'signature': signatureBytes,
     'signatureCard': signatureBytesCard,
     'signatureInitial': signatureBytesInitals,
   },
-  anyoneCanView: false, // set true if you want link-shareable files
 );
+
+
+
+// await GoogleDriveService.uploadContractBundleToFolderLink(
+//   parentFolderLinkOrId: 'https://drive.google.com/drive/folders/0APXJJOy_9A_xUk9PVA', // your Shared Drive link
+//   topFolderName: 'EdWard',                             // will create EdWard/<username>/<contractId>
+//   username: '$firstName $lastName',
+//   contractId: contractId,
+//   contractData: _sanitizeForJson(contractData),
+//   imageFilePaths: {
+//     if (driverPhotoPath.isNotEmpty) 'driverPhoto': driverPhotoPath,
+//     if (licensePhotoCustomer.isNotEmpty) 'customerLicensePhoto': licensePhotoCustomer,
+//   },
+//   imageBytes: {
+//     'signature': signatureBytes,
+//     'signatureCard': signatureBytesCard,
+//     'signatureInitial': signatureBytesInitals, // keep your variable name
+//   },
+//   anyoneCanView: true,
+// );
       return contractId;
     } catch (e) {
       throw Exception('Failed to create rental contract: $e');
@@ -315,28 +356,43 @@ class FirebaseService {
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
-       await GoogleDriveService.uploadContractBundleToSharedDrive(
-      sharedDriveId: "1eG_P8KSek5-_dv-gMqkPjae4t2TO9vbS",
-      username: name,                 
-      contractId: contractId,             
-      parentFolderName: 'Contracts',     
-      contractData: {
-        'type': 'inspection',
-        'contractId': contractId,
-        'videoUrl': videoUrl,
-        'signatureUrl': signatureUrl,
-        // For the JSON snapshot we can add a local timestamp too:
-        'submittedAtLocal': DateTime.now().toIso8601String(),
-      },
-      // Upload the original local files too:
-      imageFilePaths: {
-        'inspectionVideo': videoFilePath, // will detect mime and upload as file
-      },
-      imageBytes: {
-        'inspectionSignature': signatureBytes, // uploads as "<username> - inspectionSignature.png"
-      },
-      anyoneCanView: false, // set true if you want link-shareable files
-    );
+ await LocalArchiveService.instance.saveInspectionBundle(
+  topFolderName: 'xplore inspection',
+  username: name,
+  contractId: contractId,
+  videoFilePath: videoFilePath,
+  signatureBytes: signatureBytes,
+  inspectionData: {
+    'submittedAtLocal': DateTime.now().toIso8601String(),
+  },
+);
+
+      
+
+  //      await GoogleDriveService.uploadContractBundleToFolderLink(
+  //     parentFolderLinkOrId: 'https://drive.google.com/drive/folders/0APXJJOy_9A_xUk9PVA', // your Shared Drive link
+  // topFolderName: 'EdWard',                             // will create EdWard/<username>/<contractId>
+ 
+  //     username: name,                 
+  //     contractId:  contractId,             
+       
+  //     contractData: {
+  //       'type': 'inspection',
+  //       'contractId': contractId,
+  //       'videoUrl': videoUrl,
+  //       'signatureUrl': signatureUrl,
+  //       // For the JSON snapshot we can add a local timestamp too:
+  //       'submittedAtLocal': FieldValue.serverTimestamp(),
+  //     },
+  //     // Upload the original local files too:
+  //     imageFilePaths: {
+  //       'inspectionVideo': videoFilePath, // will detect mime and upload as file
+  //     },
+  //     imageBytes: {
+  //       'inspectionSignature': signatureBytes, 
+  //     },
+  //     anyoneCanView: true,
+  //   );
 
       await _firestore.collection('inspection').add(inspectionData);
 
