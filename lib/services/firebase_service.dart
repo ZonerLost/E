@@ -7,7 +7,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:edwardb/model/contract_model.dart';
 import 'package:edwardb/model/profile_model.dart';
 import 'package:edwardb/services/google_drive_services.dart';
-import 'package:edwardb/services/local_data_storage_service.dart';
 import 'package:edwardb/services/share_pref_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -84,6 +83,62 @@ class FirebaseService {
     }
   }
 
+
+Future<bool> checkUserEmailExists(String email) async {
+    try {
+      final normalizedEmail = email.trim().toLowerCase();
+
+      final query = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: normalizedEmail)
+          .limit(1)
+          .get();
+
+      return query.docs.isNotEmpty;
+    } catch (e) {
+      throw Exception('Failed to check email existence: $e');
+    }
+  }
+
+/// Use this in your "Forgot Password" screen.
+  Future<void> sendForgotPasswordEmail(String email) async {
+    try {
+      final exists = await checkUserEmailExists(email);
+
+      if (!exists) {
+        // You can change this message to something more generic if you like.
+        throw Exception('No account found for this email.');
+      }
+
+      await _auth.sendPasswordResetEmail(email: email.trim());
+    } on FirebaseAuthException catch (e) {
+      throw Exception('Failed to send reset email: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to send reset email: $e');
+    }
+  }
+
+
+  /// Update password for the currently logged-in user.
+  ///
+  /// Typically used when user is already authenticated and wants to change
+  /// their password (e.g. in a Profile / Settings screen).
+  Future<void> updateUserPassword(String newPassword) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('No logged-in user found.');
+      }
+
+      await user.updatePassword(newPassword);
+      // Optionally: force re-login or refresh token if needed.
+    } on FirebaseAuthException catch (e) {
+      // e.code may be 'requires-recent-login', etc.
+      throw Exception('Failed to update password: ${e.message}');
+    } catch (e) {
+      throw Exception('Failed to update password: $e');
+    }
+  }
 
   Future<void> userLogout() async {
     try {
@@ -177,7 +232,7 @@ class FirebaseService {
           );
 
       // Read driver photo file
-      final customerDriverPhotoBytes = await File(driverPhotoPath).readAsBytes();
+      final customerDriverPhotoBytes = await File(licensePhotoCustomer).readAsBytes();
       await customerDriverPhotoRef.putData(customerDriverPhotoBytes);
       final customerDriverPhotoUrl = await driverPhotoRef.getDownloadURL();
 
@@ -190,7 +245,7 @@ class FirebaseService {
       //       'license-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
       //     );
 
-      // Read license photo file
+      // // Read license photo file
       // final licensePhotoBytes = await File(licensePhotoPath).readAsBytes();
       // await licensePhotoRef.putData(licensePhotoBytes);
       // final licensePhotoUrl = await licensePhotoRef.getDownloadURL();
@@ -261,41 +316,6 @@ class FirebaseService {
 //       final snapshot = await contractRef.get();
 // final resolvedData = snapshot.data()!;
 
-await LocalArchiveService.instance.saveContractBundle(
-  topFolderName: 'xplore contracts',
-  username: '$firstName $lastName',
-  contractId: contractId,
-  contractData: _sanitizeForJson(contractData), 
-  imageFilePaths: {
-    if (driverPhotoPath.isNotEmpty) 'driverPhoto': driverPhotoPath,
-    if (licensePhotoCustomer.isNotEmpty) 'customerLicensePhoto': licensePhotoCustomer,
-  },
-  imageBytes: {
-    'signature': signatureBytes,
-    'signatureCard': signatureBytesCard,
-    'signatureInitial': signatureBytesInitals,
-  },
-);
-
-
-
-// await GoogleDriveService.uploadContractBundleToFolderLink(
-//   parentFolderLinkOrId: 'https://drive.google.com/drive/folders/0APXJJOy_9A_xUk9PVA', // your Shared Drive link
-//   topFolderName: 'EdWard',                             // will create EdWard/<username>/<contractId>
-//   username: '$firstName $lastName',
-//   contractId: contractId,
-//   contractData: _sanitizeForJson(contractData),
-//   imageFilePaths: {
-//     if (driverPhotoPath.isNotEmpty) 'driverPhoto': driverPhotoPath,
-//     if (licensePhotoCustomer.isNotEmpty) 'customerLicensePhoto': licensePhotoCustomer,
-//   },
-//   imageBytes: {
-//     'signature': signatureBytes,
-//     'signatureCard': signatureBytesCard,
-//     'signatureInitial': signatureBytesInitals, // keep your variable name
-//   },
-//   anyoneCanView: true,
-// );
       return contractId;
     } catch (e) {
       throw Exception('Failed to create rental contract: $e');
@@ -356,19 +376,6 @@ await LocalArchiveService.instance.saveContractBundle(
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
- await LocalArchiveService.instance.saveInspectionBundle(
-  topFolderName: 'xplore inspection',
-  username: name,
-  contractId: contractId,
-  videoFilePath: videoFilePath,
-  signatureBytes: signatureBytes,
-  inspectionData: {
-    'submittedAtLocal': DateTime.now().toIso8601String(),
-  },
-);
-
-      
-
   //      await GoogleDriveService.uploadContractBundleToFolderLink(
   //     parentFolderLinkOrId: 'https://drive.google.com/drive/folders/0APXJJOy_9A_xUk9PVA', // your Shared Drive link
   // topFolderName: 'EdWard',                             // will create EdWard/<username>/<contractId>
@@ -407,12 +414,12 @@ await LocalArchiveService.instance.saveContractBundle(
 Future<Map<String, dynamic>> getUserContracts() async {
   try {
     // Get logged-in profile
-    final profile = await getProfile();
+    // final profile = await getProfile();
 
     // Fetch contracts by email (since you're storing email in contracts)
     final querySnapshot = await _firestore
         .collection('contracts')
-        .where('email', isEqualTo: profile.email.toLowerCase())
+        // .where('email', isEqualTo: profile.email.toLowerCase())
         .get();
 
 
@@ -452,12 +459,12 @@ Future<Map<String, dynamic>> getUserContracts() async {
   Future<List<ContractModel>> getAllUserContracts() async {
     try {
       // Get logged-in profile
-      final profile = await getProfile();
+      // final profile = await getProfile();
 
       // Fetch contracts by email
       final querySnapshot = await _firestore
           .collection('contracts')
-          .where('email', isEqualTo: profile.email.toLowerCase())
+          // .where('email', isEqualTo: profile.email.toLowerCase())
           .get();
 
       // Convert all docs into ContractModel list

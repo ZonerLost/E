@@ -1,8 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:edwardb/config/routes/routes_names.dart';
+import 'package:edwardb/config/utils/utils.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
 import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
+import 'package:edwardb/services/pdf_archive_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -11,12 +14,20 @@ class DoneScreen extends StatefulWidget {
   final String contractId;
   final String name;
   final String? imageUrl;
+  final Map<String, dynamic> contractData;
+  final Map<String, String> localImagePaths;
+  final Map<String, Uint8List> signatureBytes;
+  final Map<String, bool> agreementStatuses;
 
   const DoneScreen({
     super.key,
     required this.contractId,
     required this.name,
     required this.imageUrl,
+    required this.contractData,
+    required this.localImagePaths,
+    required this.signatureBytes,
+    required this.agreementStatuses,
   });
 
   @override
@@ -24,6 +35,33 @@ class DoneScreen extends StatefulWidget {
 }
 
 class _DoneScreenState extends State<DoneScreen> {
+  bool _isSavingPdf = false;
+
+  Future<void> _savePdf() async {
+    if (_isSavingPdf) return;
+    setState(() => _isSavingPdf = true);
+    try {
+      final pdfFile = await PdfArchiveService.instance.saveContractPdf(
+        topFolderName: 'xplore contracts',
+        username: widget.name,
+        contractId: widget.contractId,
+        contractData: widget.contractData,
+        imageFilePaths: widget.localImagePaths,
+        imageBytes: widget.signatureBytes,
+        agreementStatuses: widget.agreementStatuses,
+      );
+      Utils.showSuccessSnackbar(
+        'Saved',
+        'PDF stored locally at ${pdfFile.path}',
+      );
+    } catch (error) {
+      Utils.showErrorSnackbar('Error', 'Failed to save PDF: $error');
+    } finally {
+      if (!mounted) return;
+      setState(() => _isSavingPdf = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(appBar: _appBar(), body: _body());
@@ -150,14 +188,21 @@ class _DoneScreenState extends State<DoneScreen> {
               ),
             ),
             50.verticalSpace,
-            // Done Button
+            SizedBox(
+              width: double.infinity,
+              height: 50.h,
+              child: EdwardbButton(
+                onPressed: _savePdf,
+                label: _isSavingPdf ? 'Saving PDF...' : 'Save as PDF',
+              ),
+            ),
+            16.verticalSpace,
             SizedBox(
               width: double.infinity,
               height: 50.h,
               child: EdwardbButton(
                 onPressed: () {
                   Get.offAndToNamed(RouteName.dashboardScreen);
-                  
                 },
                 label: 'Done',
               ),

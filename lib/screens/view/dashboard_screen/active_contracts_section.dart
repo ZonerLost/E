@@ -118,7 +118,9 @@ class ActiveContractsSection extends StatelessWidget {
               return SingleChildScrollView(
                 child: Obx( () => Column(
                     children: controller.contractsList
-                      .reversed 
+                     
+                      .toList()
+                      .reversed
                       .take(5)
                       .map((contract) {
                     final fullName =

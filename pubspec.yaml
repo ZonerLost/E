@@ -60,6 +60,7 @@ dependencies:
   googleapis: ^15.0.0
   path_provider: ^2.1.4
   external_path: ^2.2.0
+  pdf: ^3.10.0
   
   
 

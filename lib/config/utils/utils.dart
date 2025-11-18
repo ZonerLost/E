@@ -83,7 +83,6 @@ static Future<String> showMothPickerDialog(BuildContext context) async {
   //   );
   // }
 
-  /// ========================= Show Error Snackbar ==============================
   static void showErrorSnackbar(String title, String message) {
     Get.closeAllSnackbars();
     Get.snackbar(
@@ -104,6 +103,34 @@ static Future<String> showMothPickerDialog(BuildContext context) async {
       backgroundColor: kPrimaryColor,
       colorText: Colors.white,
       icon: Icon(Icons.error, size: 30.sp, color: Colors.white),
+      borderRadius: 10.r,
+      margin: EdgeInsets.all(16.w),
+      snackPosition: SnackPosition.TOP,
+      duration: const Duration(seconds: 2),
+    );
+  }
+
+  /// ========================= Show Success Snackbar =============================
+  static void showSuccessSnackbar(String title, String message) {
+    Get.closeAllSnackbars();
+    Get.snackbar(
+      title,
+      message,
+      titleText: EdwardbText(
+        title,
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+      ),
+      messageText: EdwardbText(
+        message,
+        fontSize: 12,
+        maxLines: 3,
+        color: Colors.white,
+      ),
+      backgroundColor: kPrimaryColor,
+      colorText: Colors.white,
+      icon: Icon(Icons.check, size: 30.sp, color: Colors.white),
       borderRadius: 10.r,
       margin: EdgeInsets.all(16.w),
       snackPosition: SnackPosition.TOP,

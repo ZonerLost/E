@@ -272,12 +272,13 @@ class _NewRentalContractInfoScreenState
 
                 EdwardbButton(
                   label: 'Next',
-                  onPressed: () {
-                    if (formKey.currentState!.validate() || controller.validateDriverLicensePhoto()) {
-                      // Handle next button press
-                      Get.to(() => TermCondition());
-                    }
-                  },
+                onPressed: () {
+                  if (!formKey.currentState!.validate() ||
+                      !controller.validateDriverLicensePhoto()) {
+                    return;
+                  }
+                  Get.to(() => TermCondition());
+                },
                 ),
               ],
             ),

@@ -21,13 +21,6 @@ class TermCondition extends StatefulWidget {
 }
 
 class _TermConditionState extends State<TermCondition> {
-  RxBool isChecked_1 = false.obs;
-
-  RxBool isChecked_2 = false.obs;
-
-  RxBool isChecked_3 = false.obs;
-
-  RxBool isChecked_4 = false.obs;
   final formKey = GlobalKey<FormState>();
   final controller = Get.find<NewRentalContractController>();
 
@@ -59,6 +52,7 @@ class _TermConditionState extends State<TermCondition> {
   }
 
   _body() {
+    final agreementEntries = controller.agreementEntries;
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       behavior: HitTestBehavior.opaque,
@@ -473,92 +467,31 @@ class _TermConditionState extends State<TermCondition> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // First checkbox
-                            Obx(
+                          children: agreementEntries.map((entry) {
+                            final label = entry.key;
+                            final rxValue = entry.value;
+                            return Obx(
                               () => CheckboxListTile(
-                                value: isChecked_1.value,
+                                value: rxValue.value,
                                 onChanged: (bool? value) {
-                                  isChecked_1.value = value ?? false;
+                                  rxValue.value = value ?? false;
                                 },
                                 title: EdwardbText(
-                                  'I agree to the Terms & Conditions',
+                                  label,
                                   fontSize: 16,
                                   maxLines: 3,
                                 ),
-                                controlAffinity: ListTileControlAffinity.leading,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
                                 contentPadding: EdgeInsets.zero,
                                 dense: true,
                                 activeColor: kPrimaryColor,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
                                 visualDensity: VisualDensity.compact,
                               ),
-                            ),
-                                      
-                            // Second checkbox
-                            Obx(
-                              () => CheckboxListTile(
-                                value: isChecked_2.value,
-                                onChanged: (bool? value) {
-                                  isChecked_2.value = value ?? false;
-                                },
-                                title: EdwardbText(
-                                  'I understand the damage policy',
-                                  fontSize: 16,
-                                  maxLines: 3,
-                                ),
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                dense: true,
-                                activeColor: kPrimaryColor,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                                      
-                            // Third checkbox
-                            Obx(
-                              () => CheckboxListTile(
-                                value: isChecked_3.value,
-                                onChanged: (bool? value) {
-                                  isChecked_3.value = value ?? false;
-                                },
-                                title: EdwardbText(
-                                  'I agree to the late return penalty',
-                                  fontSize: 16,
-                                  maxLines: 3,
-                                ),
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                dense: true,
-                                      
-                                activeColor: kPrimaryColor,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                                      
-                            // Fourth checkbox
-                            Obx(
-                              () => CheckboxListTile(
-                                value: isChecked_4.value,
-                                onChanged: (bool? value) {
-                                  isChecked_4.value = value ?? false;
-                                },
-                                title: EdwardbText(
-                                  'I confirm the fuel refill clause',
-                                  fontSize: 16,
-                                  maxLines: 3,
-                                ),
-                                controlAffinity: ListTileControlAffinity.leading,
-                                contentPadding: EdgeInsets.zero,
-                                dense: true,
-                                activeColor: kPrimaryColor,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                visualDensity: VisualDensity.compact,
-                              ),
-                            ),
-                          ],
+                            );
+                          }).toList(),
                         ),
                       ),
                       Expanded(child: Column(
@@ -603,21 +536,17 @@ class _TermConditionState extends State<TermCondition> {
                   EdwardbButton(
                     label: 'Next',
                     onPressed: () {
-                      if(formKey.currentState!.validate()){
-              
+                      if (!formKey.currentState!.validate()) {
+                        return;
                       }
-                      if (isChecked_1.value &&
-                          isChecked_2.value &&
-                          isChecked_3.value &&
-                          isChecked_4.value) {
-                        // Handle button press
-                        Get.to(() => NewRentalContractDriverPhotoScreen());
-                      } else {
+                      if (!controller.allAgreementsAccepted) {
                         Utils.showErrorSnackbar(
                           'Terms & Conditions',
                           'Please agree to all terms to proceed',
                         );
+                        return;
                       }
+                      Get.to(() => NewRentalContractDriverPhotoScreen());
                     },
                   ),
                 ],

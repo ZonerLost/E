@@ -62,6 +62,24 @@ class NewRentalContractController extends GetxController {
   RxnString LICENSE_PHOTO = RxnString();
   RxnString CUSTOMER_LICENSE_PHOTO = RxnString();
 
+  final Map<String, RxBool> agreementChecks = {
+    'I agree to the Terms & Conditions': false.obs,
+    'I understand the damage policy': false.obs,
+    'I agree to the late return penalty': false.obs,
+    'I confirm the fuel refill clause': false.obs,
+  };
+
+  List<MapEntry<String, RxBool>> get agreementEntries =>
+      agreementChecks.entries.toList();
+
+  bool get allAgreementsAccepted =>
+      agreementChecks.values.every((element) => element.value);
+
+  Map<String, bool> get agreementStatuses => {
+        for (final entry in agreementChecks.entries)
+          entry.key: entry.value.value,
+      };
+
   Future<void> pickDriverPhoto() async {
     try {
       final result = await Utils.pickImageFromCamera();
@@ -170,16 +188,55 @@ class NewRentalContractController extends GetxController {
 
       if (contractId.isNotEmpty) {
         Utils.showErrorSnackbar('Success', 'Contract created successfully!');
+        final fullName =
+            '${firstName.text.trim()} ${lastName.text.trim()}'.trim();
+        final contractData = {
+          'contractId': contractId,
+          'contractName': contractName.text.trim(),
+          'date': date.text.trim(),
+          'firstName': firstName.text.trim(),
+          'lastName': lastName.text.trim(),
+          'email': email.text.trim(),
+          'phoneNumber': phoneNumber.text.trim(),
+          'licenseNumber': licenseNumber.text.trim(),
+          'cardNumber': cardNumber.text.trim(),
+          'cardExpiryDate': cardExpiry.text.trim(),
+          'cvc': cvcNumber.text.trim(),
+          'status': 'active',
+          'createdAt': DateTime.now().toIso8601String(),
+          'updatedAt': DateTime.now().toIso8601String(),
+          'agreements': agreementStatuses,
+        };
+        final images = <String, String>{};
+        if (DRIVER_PHOTO.value != null) {
+          images['driverPhoto'] = DRIVER_PHOTO.value!;
+        }
+        if (CUSTOMER_LICENSE_PHOTO.value != null) {
+          images['customerLicensePhoto'] = CUSTOMER_LICENSE_PHOTO.value!;
+        }
+        final signatures = <String, Uint8List>{};
+        if (signatureBytes != null) {
+          signatures['signature'] = signatureBytes!;
+        }
+        if (signatureBytesCards != null) {
+          signatures['signatureCard'] = signatureBytesCards!;
+        }
+        if (signatureBytesInitial != null) {
+          signatures['signatureInitial'] = signatureBytesInitial!;
+        }
         // _clearForm();
         isScreenBusy.value = false;
         Get.offAll(
           () => DoneScreen(
             contractId: contractId,
-            name: '${firstName.text.trim()} ${lastName.text.trim()}',
+            name: fullName,
             imageUrl: DRIVER_PHOTO.value,
+            contractData: contractData,
+            localImagePaths: images,
+            signatureBytes: signatures,
+            agreementStatuses: agreementStatuses,
           ),
         );
-        
       }
     } catch (e) {
       log('Error in handleSubmit: $e');
