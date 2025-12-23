@@ -6,7 +6,6 @@ import 'package:edwardb/controllers/profile_controller/profile_controller.dart';
 import 'package:edwardb/screens/custom/custom_image/custom_image_widget.dart';
 import 'package:edwardb/screens/custom/custom_shimmer/custom_shimmer_widget.dart';
 import 'package:edwardb/screens/view/vehicle_inspection_screens/vehicle_inspection_welcome_screen.dart';
-import 'package:edwardb/services/dummydata.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';

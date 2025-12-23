@@ -30,7 +30,7 @@ class NewRentalContractController extends GetxController {
   late SignatureController signatureControllerName;
   late SignatureController signatureControllerCard;
   Uint8List? signatureBytes;
-  Uint8List? signatureBytesCards;
+  Uint8List? signatureBytesCard;
   Uint8List? signatureBytesInitial;
 
   @override
@@ -152,12 +152,34 @@ class NewRentalContractController extends GetxController {
     if (signatureController.isEmpty) {
       Utils.showErrorSnackbar('Error', 'Please provide your signature.');
       return false;
-    } else {
-      signatureBytes = await signatureController.toPngBytes();
-      signatureBytesCards = await signatureController.toPngBytes();
-      signatureBytesInitial = await signatureController.toPngBytes();
-      return true;
     }
+    if (signatureControllerCard.isEmpty) {
+      Utils.showErrorSnackbar('Error', 'Please provide your card signature.');
+      return false;
+    }
+    if (signatureControllerInital.isEmpty) {
+      Utils.showErrorSnackbar('Error', 'Please provide your initials.');
+      return false;
+    }
+
+    final mainSignature = await signatureController.toPngBytes();
+    final cardSignature = await signatureControllerCard.toPngBytes();
+    final initialSignature = await signatureControllerInital.toPngBytes();
+
+    if (mainSignature == null ||
+        cardSignature == null ||
+        initialSignature == null) {
+      Utils.showErrorSnackbar(
+        'Error',
+        'Unable to export signatures. Please try again.',
+      );
+      return false;
+    }
+
+    signatureBytes = mainSignature;
+    signatureBytesCard = cardSignature;
+    signatureBytesInitial = initialSignature;
+    return true;
   }
 
   Future<void> handleSubmit() async {
@@ -171,17 +193,17 @@ class NewRentalContractController extends GetxController {
         phoneNumber: phoneNumber.text.trim(),
         cardNumber: cardNumber.text.trim(),
         date: date.text.trim(),
-        licensePhotoCustomer: CUSTOMER_LICENSE_PHOTO.value!,
+        licensePhotoPath: CUSTOMER_LICENSE_PHOTO.value!,
         driverPhotoPath: DRIVER_PHOTO.value!,
         // licensePhotoPath: LICENSE_PHOTO.value!,
         signatureBytes: signatureBytes!,
         // initalController: initialController.text.trim(),
         cardCvC: cvcNumber.text.trim(), 
-        signatureBytesCard: signatureBytesCards!,
+        signatureBytesCard: signatureBytesCard!,
         contractNameController: contractName.text.trim(), 
         cardExpiry: cardExpiry.text.trim(), 
         liscenseNumber: licenseNumber.text.trim(),
-        signatureBytesInitals: signatureBytesInitial!
+        signatureBytesInitial: signatureBytesInitial!
       );
 
      
@@ -218,8 +240,8 @@ class NewRentalContractController extends GetxController {
         if (signatureBytes != null) {
           signatures['signature'] = signatureBytes!;
         }
-        if (signatureBytesCards != null) {
-          signatures['signatureCard'] = signatureBytesCards!;
+        if (signatureBytesCard != null) {
+          signatures['signatureCard'] = signatureBytesCard!;
         }
         if (signatureBytesInitial != null) {
           signatures['signatureInitial'] = signatureBytesInitial!;
@@ -260,7 +282,8 @@ class NewRentalContractController extends GetxController {
     LICENSE_PHOTO.value = null;
     signatureController.clear();
     signatureBytes = null;
-    signatureBytesCards = null;
+    signatureBytesCard = null;
+    signatureBytesInitial = null;
     licenseNumber.clear();
     cardExpiry.clear();
     cardNumber.clear();

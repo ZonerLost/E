@@ -1,6 +1,7 @@
 import 'package:edwardb/config/assets/assets.dart';
 import 'package:edwardb/config/constant/colors.dart';
 import 'package:edwardb/screens/custom/custom_button/custom_button.dart';
+import 'package:edwardb/screens/view/auth/login_screen/forgot_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -77,6 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 24.verticalSpace,
                 Obx(() {
                   return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Checkbox(
                         value: controller.rememberMe.value,
@@ -86,6 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                       ),
                       EdwardbText('Remember me', color: Colors.black),
+                      Spacer(),
+                      GestureDetector(
+                        onTap: (){
+                          Get.to(() => ForgotPasswordScreen());
+                        },
+                        child: EdwardbText('Forgot Password', 
+                        fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black)),
                     ],
                   );
                 }),

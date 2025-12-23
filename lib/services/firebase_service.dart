@@ -123,22 +123,23 @@ Future<bool> checkUserEmailExists(String email) async {
   ///
   /// Typically used when user is already authenticated and wants to change
   /// their password (e.g. in a Profile / Settings screen).
-  Future<void> updateUserPassword(String newPassword) async {
-    try {
-      final user = _auth.currentUser;
-      if (user == null) {
-        throw Exception('No logged-in user found.');
-      }
-
-      await user.updatePassword(newPassword);
-      // Optionally: force re-login or refresh token if needed.
-    } on FirebaseAuthException catch (e) {
-      // e.code may be 'requires-recent-login', etc.
-      throw Exception('Failed to update password: ${e.message}');
-    } catch (e) {
-      throw Exception('Failed to update password: $e');
-    }
-  }
+  // Future<void> updateUserPassword(String newPassword) async {
+  //   try {
+      
+  //       final query = await _firestore
+  //         .collection('users')
+  //         .where('email', isEqualTo: normalizedEmail)
+  //         .limit(1)
+  //         .get();
+  //     await user.updatePassword(newPassword);
+  //     // Optionally: force re-login or refresh token if needed.
+  //   } on FirebaseAuthException catch (e) {
+  //     // e.code may be 'requires-recent-login', etc.
+  //     throw Exception('Failed to update password: ${e.message}');
+  //   } catch (e) {
+  //     throw Exception('Failed to update password: $e');
+  //   }
+  // }
 
   Future<void> userLogout() async {
     try {
@@ -199,10 +200,10 @@ Future<bool> checkUserEmailExists(String email) async {
     required String date,
     required String driverPhotoPath,
     // required String licensePhotoPath,
-    required String licensePhotoCustomer,
+    required String licensePhotoPath,
     required Uint8List signatureBytes,
     required Uint8List signatureBytesCard,
-    required Uint8List signatureBytesInitals,
+    required Uint8List signatureBytesInitial,
   }) async {
     try {
       // Generate contract ID first
@@ -222,19 +223,17 @@ Future<bool> checkUserEmailExists(String email) async {
       final driverPhotoBytes = await File(driverPhotoPath).readAsBytes();
       await driverPhotoRef.putData(driverPhotoBytes);
       final driverPhotoUrl = await driverPhotoRef.getDownloadURL();
-      // Upload driver photo to Firebase Storage
-      final customerDriverPhotoRef = _storage
+      final licensePhotoRef = _storage
           .ref()
           .child('contracts')
           .child(contractId)
           .child(
-            'license-driver-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
+            'license-${DateTime.now().millisecondsSinceEpoch}-${_generateRandomString()}.png',
           );
 
-      // Read driver photo file
-      final customerDriverPhotoBytes = await File(licensePhotoCustomer).readAsBytes();
-      await customerDriverPhotoRef.putData(customerDriverPhotoBytes);
-      final customerDriverPhotoUrl = await driverPhotoRef.getDownloadURL();
+      final licensePhotoBytes = await File(licensePhotoPath).readAsBytes();
+      await licensePhotoRef.putData(licensePhotoBytes);
+      final licensePhotoUrl = await licensePhotoRef.getDownloadURL();
 
       // Upload license photo to Firebase Storage
       // final licensePhotoRef = _storage
@@ -282,8 +281,8 @@ Future<bool> checkUserEmailExists(String email) async {
       await signatureRefCard.putData(signatureBytesCard);
       final signatureUrlCard = await signatureRefCard.getDownloadURL();
 
-      await signatureRefInitial.putData(signatureBytesCard);
-      final signatureInitial = await signatureRefCard.getDownloadURL();
+      await signatureRefInitial.putData(signatureBytesInitial);
+      final signatureInitial = await signatureRefInitial.getDownloadURL();
 
       // Create rental contract document in Firestore
       final contractData = {
@@ -294,10 +293,10 @@ Future<bool> checkUserEmailExists(String email) async {
         'phoneNumber': phoneNumber,
         'cardNumber': cardNumber,
         'date': date,
-        'customerDriverLiscensePhotoUrl': customerDriverPhotoUrl,
+        'customerDriverLiscensePhotoUrl': licensePhotoUrl,
         'licenseNumber' : liscenseNumber,
         'driverPhotoUrl': driverPhotoUrl,
-        // 'licensePhotoUrl': licensePhotoUrl,
+        'licensePhotoUrl': licensePhotoUrl,
         'signatureUrl': signatureUrl,
         'signatureCard': signatureUrlCard,
         'cvc': cardCvC,

@@ -8,6 +8,7 @@ import 'package:edwardb/screens/custom/custom_text/custom_text.dart';
 import 'package:edwardb/screens/custom/custom_text_from_field/custom_text_from_field.dart';
 import 'package:edwardb/screens/view/new_rental_contract_screens/term_condition.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import '../../../controllers/new_rental_contract_controller/new_rental_contract_controller.dart';
@@ -146,13 +147,15 @@ class _NewRentalContractInfoScreenState
                       child: EdwardbTextField(
                         controller: controller.licenseNumber,
                         hintText: 'License Number',
-                        
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                        ],
                         keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter the license number';
                           }
-                          // Add date validation if needed
+                          
                           return null;
                         },
                       ),
@@ -252,11 +255,12 @@ class _NewRentalContractInfoScreenState
                                 child: EdwardbButton(
                                   label: 'Take Photo',
                                   onPressed: () async {
-
-                                 var g =  await Get.to(() => CameraScreen(useFrontCamera: true));
-                                 if(g != null){
-                                  controller.CUSTOMER_LICENSE_PHOTO.value = g;
-                                 }
+                                    final path = await Get.to(
+                                      () => CameraScreen(mode: CameraMode.license),
+                                    );
+                                    if (path != null) {
+                                      controller.CUSTOMER_LICENSE_PHOTO.value = path;
+                                    }
                                   },
                                 ),
                               ),

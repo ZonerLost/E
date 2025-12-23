@@ -8,10 +8,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:image/image.dart' as img;
 
+enum CameraMode { driver, license }
+
 class CameraScreen extends StatefulWidget {
+  final CameraMode mode;
   final bool useFrontCamera; // true = front, false = back
 
-  const CameraScreen({super.key, required this.useFrontCamera});
+  const CameraScreen({
+    super.key,
+    required this.mode,
+    bool? useFrontCamera,
+  }) : useFrontCamera = useFrontCamera ?? (mode == CameraMode.driver);
 
   @override
   // ignore: library_private_types_in_public_api
@@ -109,8 +116,9 @@ class _CameraScreenState extends State<CameraScreen> {
 
       if (original != null) {
         int cropWidth, cropHeight, cropX, cropY;
+        final isDriverMode = widget.mode == CameraMode.driver;
 
-        if (_isFrontCamera) {
+        if (isDriverMode && _isFrontCamera) {
           // Circle crop -> we'll crop a square around the circle
           cropWidth =
               (original.width * 0.6).toInt(); // match your overlay radius
@@ -147,6 +155,7 @@ class _CameraScreenState extends State<CameraScreen> {
 
     // Show preview if a picture is captured
     if (capturedFile != null) {
+      final isDriverMode = widget.mode == CameraMode.driver;
       return Scaffold(
         backgroundColor: Colors.white,
         body: SizedBox(
@@ -155,7 +164,7 @@ class _CameraScreenState extends State<CameraScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (!_isFrontCamera)
+              if (!isDriverMode)
                 Padding(
                   padding: const EdgeInsets.all(12.0),
                   child: ClipRRect(
@@ -188,7 +197,7 @@ class _CameraScreenState extends State<CameraScreen> {
                 ),
               30.verticalSpace,
               EdwardbText(
-                _isFrontCamera
+                isDriverMode
                     ? "Confirm Driver Photo"
                     : "Confirm License Photo",
                 fontWeight: FontWeight.bold,
@@ -243,7 +252,7 @@ class _CameraScreenState extends State<CameraScreen> {
         children: [
           Expanded(
             child: SizedBox(
-              height: _isFrontCamera
+              height: widget.mode == CameraMode.driver
                   ? context.screenHeight * 0.7
                   : context.screenHeight,
               width: context.screenWidth,
@@ -255,7 +264,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   Positioned.fill(
                     child: IgnorePointer(
                       child: CustomPaint(
-                        painter: OverlayPainter(isFront: _isFrontCamera),
+                        painter: OverlayPainter(mode: widget.mode),
                       ),
                     ),
                   ),
@@ -302,9 +311,9 @@ class _CameraScreenState extends State<CameraScreen> {
 }
 
 class OverlayPainter extends CustomPainter {
-  final bool isFront;
+  final CameraMode mode;
 
-  OverlayPainter({required this.isFront});
+  const OverlayPainter({required this.mode});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -316,7 +325,7 @@ class OverlayPainter extends CustomPainter {
       ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
 
     Path cutout;
-    if (isFront) {
+    if (mode == CameraMode.driver) {
       double radius = size.width * 0.5;
       cutout = Path()
         ..addOval(Rect.fromCircle(
